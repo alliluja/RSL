@@ -1,0 +1,131 @@
+{
+   "header": {
+      "prefix": "head",
+      "body": [
+            "// ===========================================================================",
+            "//            Copyright (c) 1993 - ${CURRENT_YEAR} R-Style Softlab ",
+            "//                      All Rights Reserved. ",
+            "// ",
+            "//  System      : ${1:RS-Bank}",
+            "//  File name   : ${TM_FILENAME}",
+            "//  Date        : ${CURRENT_DATE}.${CURRENT_MONTH}.${CURRENT_YEAR}",
+            "//  Description : ${2:Description}",
+            "//  Programmer  : ${3:Programmer}",
+            "//  Remarks     : $0",
+            "// ",
+            "// ===========================================================================",
+      ],
+      "description": "Macro header"
+    },
+    "macro": {
+      "prefix": "macro",
+      "body": [ 
+         "${1:private} macro ${2:name} (${3:extVar})${4:return}",
+         "\tvar result = null;",
+         "\t$0",
+         "return result;",
+         "end;"
+      ],
+      "description": "private macro"
+   },
+    "while": {
+      "prefix": "while",
+      "body": [ 
+         "while (${1:expr})",
+         "\t$0",
+         "end;"
+      ],
+      "description": "while"
+   },
+    "debugbreak": {
+      "prefix": "db",
+      "body": [ "debugbreak; $0"
+      ],
+      "description": "debugbreak"
+   },
+   "for_arr": {
+      "prefix": "fora",
+      "body": [
+         "for (var ${1:item}, ${2:itemlist})",
+         "\t$0",
+         "end;"
+      ],
+      "description": "For (var item, itemlist)"
+   },
+    
+   "for_iter": {
+      "prefix": "for",
+      "body": [
+         "for (var i, ${1:begin}, ${2:end}, ${3:loop})",
+         "\t$0",
+         "end;"
+      ],
+      "description": "For (var i, 0, 10, 1)"
+   },
+
+   "if": {
+      "prefix": "if",
+      "body": [
+         "if (${1:cond})",
+         "\t$0",
+         "end;"
+      ],
+      "description": "if() end;"
+   },
+
+   "elif": {
+      "prefix": "ife",
+      "body": [
+         "if (${1:cond})",
+         "elif (${2:elseCond})",
+         "\t$0",
+         "end;"
+      ],
+      "description": "if() elif end;"
+   },
+
+   "ifelse": {
+      "prefix": "ifelse",
+      "body": [
+         "if (${1:cond})",
+         "\t${2://true}",
+         "else",
+         "\t${3://false}",
+         "end;"
+      ],
+      "description": "if() elif end;"
+   },
+
+   "note": {
+      "prefix": "note",
+      "body": [
+         "NOTE >> $0"
+      ],
+      "description": "NOTE!"
+   },
+
+   "todo": {
+      "prefix": "todo",
+      "body": [
+         "TODO: $0"
+      ],
+      "description": "TODO:"
+   },
+
+   "fixme": {
+      "prefix": "fixme",
+      "body": [
+         "FIXME: $0"
+      ],
+      "description": "FIXME:"
+   },
+
+   "warn": {
+      "prefix": "warn",
+      "body": [
+         "WARNING!!! $0"
+      ],
+      "description": "WARN:"
+   }
+
+}
