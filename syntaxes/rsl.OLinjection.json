@@ -1,0 +1,23 @@
+{
+	"scopeName": "OLcomment.injection",
+	"injectionSelector": "L:comment.line.double-slash.rsl",
+	"patterns": [
+		{
+			"include": "#strHighlight"
+		},
+		{
+			"include": "#numHighlight"
+		}
+
+	],
+	"repository": {
+		"strHighlight": {
+			"match": "(?i)`[\\w\\s]{1,}`",
+			"name": "string.quoted.single.rsl"
+		},
+		"numHighlight": {
+			"match": "(?i)[*][\\w\\s]{1,}[*]",
+			"name": "constant.numeric.rsl"
+		}
+	}
+}
