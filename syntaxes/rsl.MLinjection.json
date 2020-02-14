@@ -4,9 +4,6 @@
 	"patterns": [
 		{
 			"include": "#strHighlight"
-		},
-		{
-			"include": "#numHighlight"
 		}
 
 	],
@@ -14,10 +11,6 @@
 		"strHighlight": {
 			"match": "(?i)`[\\w\\s]{1,}`",
 			"name": "string.quoted.single.rsl"
-		},
-		"numHighlight": {
-			"match": "(?i)[*][\\w\\s]{1,}[*]",
-			"name": "constant.numeric.rsl"
 		}
 	}
 }
