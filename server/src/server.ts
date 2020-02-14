@@ -1,8 +1,3 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-
 import {
     createConnection,
     TextDocuments,
@@ -12,52 +7,131 @@ import {
     DidChangeConfigurationNotification,
     CompletionItem,
     TextDocumentPositionParams,
-	Hover,
+    Hover,
+    CompletionItemKind,
+    Location,
+    Definition,
+    Position,
 } from 'vscode-languageserver';
 
 
 import
 {
-    counterReset,
-    getCIArr,
-    getHover,
-    getDefinitionLocation,
-	CASTBase,
+    CBase,
     Validator,
-	IFAStruct
+    IntersCIInfo,
 } from './common';
 
-// Create a connection for the server. The connection uses Node's IPC as a transport.
-// Also include all preview / proposed LSP features.
+import { IFAStruct, IRslSettings, IToken, IFindObj } from  './interfaces';
+import { getDefaults, getCIInfoForArray } from './defaults';
+import { varType } from './enums';
+
+
 let connection = createConnection(ProposedFeatures.all);
-
-// Create a simple text document manager. The text document manager
-// supports full document sync only
-let documents: TextDocuments = new TextDocuments();
-
-let hasConfigurationCapability: boolean = false;
-let hasWorkspaceFolderCapability: boolean = false;
+let documents                   : TextDocuments = new TextDocuments();
+let hasConfigurationCapability  : boolean       = false;
+let hasWorkspaceFolderCapability: boolean       = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
-let workFolderOpened:boolean = false;
-let Imports:Array<IFAStruct>;
-let curDoc: TextDocument;
-let tree: CASTBase = undefined;
-const defaultSettings: RSLSettings = { import: "ДА" };
-let globalSettings: RSLSettings = defaultSettings;
-let validator:Validator;
-
-// Cache the settings of all open documents
-let documentSettings: Map<string, Thenable<RSLSettings>> = new Map();
+let workFolderOpened            : boolean        = false;
+const defaultSettings           : IRslSettings  = { import: "ДА" };
+let globalSettings              : IRslSettings  = defaultSettings;
+let documentSettings            : Map<string, Thenable<IRslSettings>> = new Map();
+let validator                   : Validator;
+let Imports                     : Array<IFAStruct>;
 
 export function GetFileRequest(nameInter:string) {
-	if (workFolderOpened && globalSettings.import == "ДА") connection.sendRequest("getFile", nameInter);
+    if (workFolderOpened && globalSettings.import == "ДА")
+        connection.sendRequest("getFile", nameInter);
+}
+
+export function getTree():Array<IFAStruct> {return Imports}
+
+function getCurDoc(uri:string):TextDocument {
+    let curDocArr = documents.all().filter((value)=>{
+        return value.uri == uri;
+    });
+    return curDocArr.pop();
+}
+
+function getCurObj(uri:string):CBase {
+    let obj:CBase = undefined;
+    for (const iterator of Imports) {
+        if (iterator.uri == uri) {
+            obj = iterator.object;
+            break;
+        }
+    }
+    return obj;
+}
+
+function FindObject(tdpp: TextDocumentPositionParams): IFindObj {
+    let uri = tdpp.textDocument.uri;
+    let CBaseObject  : CBase    = undefined;
+    let findObject   : IFindObj = undefined;
+    let token        : IToken   = undefined;
+    let document     : TextDocument = getCurDoc(tdpp.textDocument.uri);
+    let tree         : CBase  = getCurObj(tdpp.textDocument.uri);
+        if (tree != undefined) {
+            let curPos = document.offsetAt(tdpp.position);
+            token = tree.getCurrentToken(curPos);
+            if (token !== undefined) {
+                let objArr = tree.getActualChilds(curPos);
+                let objects: Array<CBase> = new Array();
+                for (const element of objArr) {
+                    if (element.isObject())
+                    {
+                        element.getChilds().forEach(child=>{
+                            if (child.Name === token.str) objects.push(child);
+                        });
+                    }
+                    if (element.Name === token.str) {
+                        objects.push(element);
+                    }
+                }
+                if (objects.length > 1)
+                {
+                    let minDistanse:number = token.range.start;
+                    for (const iterator of objects)
+                    {
+                        let curDistanse:number = token.range.start - iterator.Range.end;
+                        if (curDistanse < minDistanse)
+                        {
+                            CBaseObject = iterator;
+                            minDistanse = curDistanse;
+                        }
+                    }
+                }
+                else if (objects.length == 1)
+                {
+                    CBaseObject = objects.pop();
+                }
+
+                if (CBaseObject == undefined)
+                {
+                    for (const iterator of Imports) {
+                        if (iterator.uri != tdpp.textDocument.uri) {
+                            let objArr = iterator.object.getActualChilds(0);
+                            for (const element of objArr) {
+                                if (element.Name === token.str) {
+                                    CBaseObject = element;
+                                    uri = iterator.uri;
+                                    break;
+                                }
+                            }
+                        }
+                        if (CBaseObject != undefined) break;
+                    }
+                }
+            }
+        }
+        findObject = (CBaseObject != undefined)?{object: CBaseObject, range: CBaseObject.Range, uri: uri}: undefined;
+    return findObject;
 }
 
 connection.onInitialize((params: InitializeParams) => {
-	let capabilities = params.capabilities;
-	workFolderOpened = (params.rootPath != null)? true: false;
-    // Does the client support the `workspace/configuration` request?
-    // If not, we will fall back using global settings
+    let capabilities = params.capabilities;
+    workFolderOpened = (params.rootPath != null)? true: false;
+    
     hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
     hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
     hasDiagnosticRelatedInformationCapability =
@@ -67,13 +141,15 @@ connection.onInitialize((params: InitializeParams) => {
     return {
         capabilities: {
             textDocumentSync: documents.syncKind,
-            // Tell the client that the server supports code completion
+            // Включим поддержку автодополнения
             completionProvider: {
-				resolveProvider: true,
-				"triggerCharacters": [ '.' ]
-			},
-			hoverProvider: true,
-			definitionProvider: true
+                resolveProvider: true,
+                "triggerCharacters": [ '.' ]
+            },
+            // Включим поддержку подсказок при наведении
+            hoverProvider: true,
+            // Включим поддержку перехода к определению (F12)
+            definitionProvider: true
         }
     };
 });
@@ -82,9 +158,8 @@ connection.onInitialized(() => {
     validator = new Validator();
     Imports   = new Array();
     
-	if (!workFolderOpened) connection.sendNotification("noRootFolder");
+    if (!workFolderOpened) connection.sendNotification("noRootFolder"); //не открыта папка, надо ругнуться
     if (hasConfigurationCapability) {
-        // Register for all configuration changes.
         connection.client.register(
             DidChangeConfigurationNotification.type,
             undefined
@@ -97,29 +172,19 @@ connection.onInitialized(() => {
     }
 });
 
-// The settings
-interface RSLSettings {
-	// maxNumberOfProblems: number;
-	import: string;
-}
-
-
-
 connection.onDidChangeConfiguration(change => {
     if (hasConfigurationCapability) {
-        // Reset all cached document settings
         documentSettings.clear();
     } else {
-        globalSettings = <RSLSettings>(
+        globalSettings = <IRslSettings>(
             (change.settings.RSLanguageServer || defaultSettings)
         );
     }
 
-    // Revalidate all open text documents
     documents.all().forEach(validateTextDocument);
 });
 
-function getDocumentSettings(resource: string): Thenable<RSLSettings> {
+function getDocumentSettings(resource: string): Thenable<IRslSettings> {
     if (!hasConfigurationCapability) {
         return Promise.resolve(globalSettings);
     }
@@ -134,165 +199,157 @@ function getDocumentSettings(resource: string): Thenable<RSLSettings> {
     return result;
 }
 
-// Only keep settings for open documents
 documents.onDidClose(e => {
-	// let index = Imports.findIndex((value)=>{if (value[0] == e.document.uri) return true; else return false;})
-	// if (index >= 0) Imports.splice(index, 1);
-	// connection.console.log(`Close file: ${e.document.uri.toString()}`);
+    // let index = Imports.findIndex((value)=>{if (value[0] == e.document.uri) return true; else return false;})
+    // if (index >= 0) Imports.splice(index, 1);
+    // connection.console.log(`Close file: ${e.document.uri.toString()}`);
+    // пока закомментил, Code нахрена то периодически сам закрывает файлы
     documentSettings.delete(e.document.uri);
 });
 
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-	connection.console.log(`Open file: ${change.document.uri.toString()}`);
-	validateTextDocument(change.document);
+    connection.console.log(`Парсинг файла: ${change.document.uri.toString()}`);
+    validateTextDocument(change.document);
 });
 
-
-export function getTree():Array<IFAStruct> {return Imports}
-
-
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-    curDoc = textDocument;
-    // In this simple example we get the settings for every validate run.
-	globalSettings = await getDocumentSettings(textDocument.uri);
-	counterReset();
-	if (tree == undefined) {
-		tree = new CASTBase(textDocument.getText());
-		Imports.push({uri: textDocument.uri, object: tree});
-	}
-	else {
-		let isPresent:boolean = false;
-		for (let iterator of Imports) {
-			if (iterator.uri == textDocument.uri) {
-				iterator.object = new CASTBase(textDocument.getText());
-				isPresent = true;
-				break;
-			}
-		}
-		if (!isPresent) {
-			tree = new CASTBase(textDocument.getText());
-			Imports.push({uri: textDocument.uri, object: tree});
-		}
-	}
-/*
-    // The validator creates diagnostics for all uppercase words length 2 and more
-    let text = textDocument.getText();
-    let pattern = /\b[A-Z_-\d]{2,}\b/g;
-    let m: RegExpExecArray | null;
+    globalSettings = await getDocumentSettings(textDocument.uri);
 
-    let problems = 0;
-    let diagnostics: Diagnostic[] = [];
-    while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-        problems++;
-        let diagnosic: Diagnostic = {
-            severity: DiagnosticSeverity.Warning,
-            range: {
-                start: textDocument.positionAt(m.index),
-                end: textDocument.positionAt(m.index + m[0].length)
-            },
-            message: `${m[0]} Р’СЃРµ РІ РІРµСЂС…РЅРµРј СЂРµРіРёСЃС‚СЂРµ.`,
-            source: 'ex'
-        };
-        if (hasDiagnosticRelatedInformationCapability) {
-            diagnosic.relatedInformation = [
-                {
-                    location: {
-                        uri: textDocument.uri,
-                        range: Object.assign({}, diagnosic.range)
-                    },
-                    message: 'РљР°РєР°СЏ-С‚Рѕ С…СЂРµРЅСЊ'
-                },
-                {
-                    location: {
-                        uri: textDocument.uri,
-                        range: Object.assign({}, diagnosic.range)
-                    },
-                    message: 'Particularly for names'
-                }
-            ];
+    let isPresent:boolean = false;
+    for (let iterator of Imports) {
+        if (iterator.uri == textDocument.uri) {
+            iterator.object = new CBase(textDocument.getText(), 0);
+            isPresent = true;
+            break;
         }
-        diagnostics.push(diagnosic);
     }
-
-    // Send the computed diagnostics to VSCode.
-     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });*/
+    if (!isPresent) {
+        Imports.push({uri: textDocument.uri, object: new CBase(textDocument.getText(), 0)});
+    }
 }
 
 connection.onDidChangeWatchedFiles(_change => {
-    // Monitored files have change in VSCode
     connection.console.log('We received an file change event');
 });
 
+connection.onCompletion((tdpp: TextDocumentPositionParams): CompletionItem[] => {
+    validator.exec();
+    let CompletionItemArray : Array<CompletionItem>  = new Array();
+    let document            : TextDocument           = getCurDoc(tdpp.textDocument.uri);
+    let obj                 : IFindObj               = FindObject(tdpp);
+    let curPos = document.offsetAt(tdpp.position);
 
-
-// This handler provides the initial list of the completion items.
-connection.onCompletion(
-    (tdpp: TextDocumentPositionParams): CompletionItem[] => {
-		// for (let iterator of Imports) {
-		// 	iterator[1].setPos(0);
-		// 	iterator[1].exec();
-        // }
-        validator.exec();
-        let curDocArr = documents.all().filter((value)=>{
-            return value.uri == tdpp.textDocument.uri;
-        });
-        return getCIArr(tdpp, curDocArr[0]/*, Imports[0][1]*/);
+    if (obj != undefined) {     //нашли эту переменную
+        if (obj.object.Type !== "variant") {
+            let objClass: CBase;
+            for (const iterator of Imports) {
+                // objClass = iterator.object.RecursiveFind(obj.object.Type); //поищем в дереве что-то с таким названием, как тип этой переменной (предполагаем, что это должен быть класс)
+                let objArr = iterator.object.getActualChilds(iterator.uri == tdpp.textDocument.uri? curPos: 0);
+                for (const objIter of objArr)
+                {
+                    if (objIter.Name == obj.object.Type)
+                    {
+                        objClass = objIter;
+                        break;
+                    }
+                }
+                if (objClass != undefined) break;
+            }
+            if (objClass != undefined /* && objClass.ObjKind === CompletionItemKind.Class */){
+                CompletionItemArray = objClass.ChildsCIInfo(true); //получим всю информацию о детях этого класса
+            // else { //не нашли в открытом файле - будем искать дальше
+            //     let Def = getDefaults();
+            //     let ans = Def.find(obj.object.Type);
+            //     if (ans != undefined) {
+            //         CompletionItemArray = ans.ChildsCIInfo();
+            //     }
+            }
+        }
     }
-);
+    else {
+          Imports.forEach(element => {
+              if (element.uri == tdpp.textDocument.uri) CompletionItemArray = CompletionItemArray.concat(element.object.ChildsCIInfo(false, curPos, true));
+              else CompletionItemArray = CompletionItemArray.concat(element.object.ChildsCIInfo(true, 0, false));
+          });
+          CompletionItemArray = CompletionItemArray.concat(getCIInfoForArray(getDefaults())); //все дефолтные классы, функции и переменные
+          CompletionItemArray = CompletionItemArray.concat(IntersCIInfo());
+     }
+    return CompletionItemArray;
+});
 
-// This handler resolves additional information for the item selected in
-// the completion list.
 connection.onCompletionResolve((item: CompletionItem): CompletionItem => {return item;});
 
 connection.onHover((tdpp: TextDocumentPositionParams): Hover => {
-	// for (let iterator of Imports) {
-	// 	iterator[1].setPos(0);
-	// 	iterator[1].exec();
-    // }
     validator.exec();
-	let curDocArr = documents.all().filter((value)=>{
-		return value.uri == tdpp.textDocument.uri;
-	});
-	return getHover(tdpp, curDocArr[0]/*, Imports[0][1]*/);});
+    let hover    : Hover        =  undefined;
+    let document : TextDocument = getCurDoc(tdpp.textDocument.uri);
+    let obj      : IFindObj     = FindObject(tdpp);
+    let token    : IToken       = getCurObj(tdpp.textDocument.uri).getCurrentToken(document.offsetAt(tdpp.position));
+    if (obj != undefined) {
+        let CIInfo = obj.object.CIInfo;
+        let comment:string = (CIInfo.documentation.toString().length > 0)? ` \n\r${CIInfo.documentation.toString()}`: "";
+        hover = {
+            contents: `${CIInfo.detail}${comment}`,
+            range : { start: document.positionAt(token.range.start),
+                      end  : document.positionAt(token.range.end) }
+        }
+    }
+    return hover != undefined? hover: null;
+});
 
 connection.onDefinition((tdpp: TextDocumentPositionParams) => {
-	// let uri:string = params.textDocument.uri; //заменить реальным uri файла, где находится определение
-	// let range: Range = {start: { line: 3, character: 1 }, end: { line: 4, character: 10 }};
-    // return Location.create(uri, range);
     validator.exec();
-	let curDocArr = documents.all().filter((value)=>{
-		return value.uri == tdpp.textDocument.uri;
-	});
-    return getDefinitionLocation(tdpp, curDocArr[0]/*, Imports[0][1]*/);
+    let obj     : IFindObj     = FindObject(tdpp);
+    let result  : Definition   = undefined;
+    if (obj != undefined) {
+            let document: TextDocument = getCurDoc(obj.uri);
+            let range = obj.object.Range;
+            let startPos: Position = document.positionAt(range.start);
+            let endPos  : Position = document.positionAt(range.start + obj.object.Name.length);
+            result = Location.create(obj.uri, {
+                start: startPos,
+                end  : endPos
+            })
+    }
+    return (result !== undefined)? result: null; //getDefinitionLocation(tdpp, getCurDoc(tdpp.textDocument.uri));
 });
-/* 
-connection.onDidOpenTextDocument((params) => {
-    for (let iterator of Imports) {
-		iterator[1].setPos(0);
-		iterator[1].exec();
-	}
-	
-	connection.console.log(`Open file: ${params.textDocument.uri}`);
-}); */
-/*
-connection.onDidChangeTextDocument((params) => {
-    // The content of a text document did change in VSCode.
-    // params.uri uniquely identifies the document.
-    // params.contentChanges describe the content changes to the document.
-    connection.console.log(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
-});
-connection.onDidCloseTextDocument((params) => {
-    // A text document got closed in VSCode.
-    // params.uri uniquely identifies the document.
-    connection.console.log(`${params.textDocument.uri} closed.`);
-});
-*/
 
-// Make the text document manager listen on the connection
-// for open, change and close text document events
 documents.listen(connection);
 
-// Listen on the connection
 connection.listen();
+/*
+
+export function getDefinitionLocation(tdpp: TextDocumentPositionParams, document: TextDocument): Definition {
+    let result: Definition;
+    let tree: CBase;
+    let arr = getTree();
+    for (const iterator of arr) {
+        if (iterator.uri == tdpp.textDocument.uri) {
+            tree = iterator.object;
+            break;
+        }
+    }
+    if (tree != undefined) {
+        let curPos = document.offsetAt(tdpp.position);
+        let curToken: [string, number, number] = tree.getCurrentToken(curPos);
+        let obj: CBase;
+        let objArr = tree.getActualChilds(curPos);
+        objArr.forEach(element => {
+            if (element.getName() == curToken[0]) obj = element;
+        });
+        if (obj == undefined) obj = tree.Find(curToken[0]);
+        if (obj != undefined) {
+            let range = obj.getRange();
+            let startPos: Position = document.positionAt(range[0]);
+            startPos.line++;
+            result = Location.create(tdpp.textDocument.uri, {
+                start: startPos,
+                end: startPos
+            })
+        }
+        else return null;
+    }
+    else return null;
+    return result;
+}
+*/

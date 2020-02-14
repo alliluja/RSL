@@ -2,32 +2,24 @@
  * Константы.
  */
 export const DEFAULT_WHITESPACES: string = " \n\r\t";
-export const DIGITS = "0123456789";
-export const STOP_CHARS: string = " .,()\:;=<>![]" + DEFAULT_WHITESPACES;
-export const tokensWithEnd: Array<string> = new Array("class", "macro", "if", "for", "while");
+export const STOP_CHARS         : string = ".,():;=<>![]" + DEFAULT_WHITESPACES;
+export const DIGITS             : string = "0123456789";
+export const OLC                : string = "//";
+export const MLC_O              : string = "/*";
+export const MLC_C              : string = "*/";
 
-
-/**
- * Информация об объекте.
- */
-export interface ObjInfo {
-    name     : string,
-    valueType: string
-}
-
-/**
- * Для кортежей.
- */
-export enum t {
-    boolVal, //нулевой элемент - булево
-    numIndex //первый элемент  - число
-}
 /**
  * Для GetNextToken.
  */
 export enum SkipComment {
     yes,
     no
+}
+
+/** Информация об объекте.*/
+export interface ObjInfo {
+    name     : string,
+    valueType: string
 }
 
 /**
