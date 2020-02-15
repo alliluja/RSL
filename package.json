@@ -4,8 +4,8 @@
 	"description": "R-Style Language support",
 	"author": "Veniamin Rakov",
 	"license": "MIT",
-   "version": "1.0.4",
-   "icon": "icon.png",
+	"version": "1.0.4",
+	"icon": "icon.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/alliluja/RSL"
@@ -48,12 +48,16 @@
 			{
 				"scopeName": "OLcomment.injection",
 				"path": "./syntaxes/rsl.OLinjection.json",
-				"injectTo": ["source.mac"]
+				"injectTo": [
+					"source.mac"
+				]
 			},
 			{
 				"scopeName": "MLcomment.injection",
 				"path": "./syntaxes/rsl.MLinjection.json",
-				"injectTo": ["source.mac"]
+				"injectTo": [
+					"source.mac"
+				]
 			}
 		],
 		"snippets": [
