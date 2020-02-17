@@ -6,6 +6,6 @@
  
 ## Functionality
 
-* Some snippets.
+* [Some snippets](https://github.com/alliluja/RSL/wiki/Snippets).
 * IntelliSense.
 * Code coloring.
