@@ -1,8 +1,10 @@
 # RSL Language support for R-Style company
 
- [GitHub Link](https://github.com/alliluja/RSL "It can be not updated source code")
+ [GitHub Link](https://github.com/alliluja/RSL "Source, wiki, issue")
 
  [MarketPlace Link](https://marketplace.visualstudio.com/items?itemName=VeniaminRakov.rsl "Releases")
+ 
+ [Issue Link](https://github.com/alliluja/RSL/issues "If any trouble")
  
 ## Functionality
 
