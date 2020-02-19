@@ -21,9 +21,6 @@ jobs:
            
     - name: Setup VSCE
       run : npm install vsce
-      
-    - name: Save changes in packages in master
-      uses: actions/commit
 
     - name: Deploy to Marketplace
-      run : node_modules/vsce/out/vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
+      run : npm publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
