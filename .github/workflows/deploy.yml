@@ -20,7 +20,4 @@ jobs:
       run : npm install vsce
 
     - name: Deploy to Marketplace
-      run : |
-        ls -la
-        cd ..
-        ls -la /RSL/RSL
+      run : /home/runner/work/RSL/RSL/vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
