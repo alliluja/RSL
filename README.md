@@ -1,4 +1,9 @@
 # RSL Language support for R-Style company
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://github.com/alliluja/RSL/workflows/build/badge.svg?branch=master)](https://github.com/alliluja/RSL/workflows/build/badge.svg?branch=master)
+[![Version](https://vsmarketplacebadge.apphb.com/version-short/VeniaminRakov.rsl.svg)](https://marketplace.visualstudio.com/items?itemName=VeniaminRakov.rsl)
+[![Installs](https://vsmarketplacebadge.apphb.com/installs-short/VeniaminRakov.rsl.svg)](https://marketplace.visualstudio.com/items?itemName=VeniaminRakov.rsl)
+[![Ratings](https://vsmarketplacebadge.apphb.com/rating-short/VeniaminRakov.rsl.svg)](https://marketplace.visualstudio.com/items?itemName=VeniaminRakov.rsl)
 
  [GitHub Link](https://github.com/alliluja/RSL "Source, wiki, issue")
 
