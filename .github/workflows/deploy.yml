@@ -1,0 +1,23 @@
+#Every changes in MASTER will deploy to marketplase with next patch number
+name: deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install npm
+      run : npm install
+           
+    - name: Setup VSCE
+      run : npm install -g vsce
+
+    - name: Deploy to Marketplace
+      run : vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
