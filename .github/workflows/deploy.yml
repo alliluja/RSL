@@ -20,4 +20,4 @@ jobs:
       run : npm install vsce
 
     - name: Deploy to Marketplace
-      run : node node_modules/vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
+      run : node_modules/vsce/out/vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
