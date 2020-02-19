@@ -17,7 +17,9 @@ jobs:
       run : npm install
            
     - name: Setup VSCE
-      run : npm install vsce
+      run : |
+        npm install vsce
+        git commit -m "update by deploy action"
 
     - name: Deploy to Marketplace
       run : node_modules/vsce/out/vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
