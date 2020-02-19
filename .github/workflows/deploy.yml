@@ -13,13 +13,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install npm
-      run : npm install
+    - name: npm install, build and test
+      run: |
+        npm install
+        npm run build --if-present
+        npm test
            
     - name: Setup VSCE
-      run : |
-        npm install vsce
-        git commit -m "update by deploy action"
+      run : npm install vsce
 
     - name: Deploy to Marketplace
       run : node_modules/vsce/out/vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
