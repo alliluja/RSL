@@ -2,7 +2,7 @@
 name: deploy
 
 on:
-  push:
+  pull_request:
     branches:
       - master
 
@@ -22,7 +22,7 @@ jobs:
     - name: Setup VSCE
       run : npm install vsce
       
-    - name: Commit changes
+    - name: Commit changes locally
       run: |
         git config user.email "raven03160@gmail.com"
         git config user.name "Veniamin Rakov"
@@ -30,4 +30,4 @@ jobs:
         git commit -m "Update files by Deploy Action"
 
     - name: Deploy to Marketplace
-      run : node_modules/vsce/out/vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
+      run : node_modules/vsce/out/vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
