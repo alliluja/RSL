@@ -26,6 +26,7 @@ jobs:
       run: |
         git config user.email "raven03160@gmail.com"
         git config user.name "Veniamin Rakov"
+        git add package-lock.json package.json
         git commit -m "Update files by Deploy Action"
 
     - name: Deploy to Marketplace
