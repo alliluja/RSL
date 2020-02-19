@@ -13,10 +13,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install npm
-      run: |
-        ls -la
-        npm install
-        ls -la
-         
+      run : npm install
+      
+  #Вообще-то это не работает, надо прописать нормальную команду сборки и деплоя на маркетплейс       
     - name: Run build
-      run: npm build
+      run : npm build
