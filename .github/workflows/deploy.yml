@@ -21,6 +21,9 @@ jobs:
            
     - name: Setup VSCE
       run : npm install vsce
+      
+    - name: Commit changes
+      run: git commit -m "Update files by Deploy Action"
 
     - name: Deploy to Marketplace
-      run : npm publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
+      run : node_modules/vsce/out/vsce publish patch -p ${{ secrets.MARKETPLACE_TOKEN }}
