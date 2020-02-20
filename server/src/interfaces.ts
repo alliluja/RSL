@@ -10,13 +10,6 @@ export interface IFAStruct {
 }
 
 /**
- * Интерфейс для массива с импортированными модулями
- */
-export interface IFindObj extends IFAStruct{
-	range   : IRange;
-}
-
-/**
  * Интерфейс для кортежей
  */
 export interface If_s<T> {
@@ -56,24 +49,7 @@ export interface IRange {
     end     :number;
 }
 
-/**
- * Интерфейс для класса с интерами
- */
-export interface IIntersResolve {
-/**
- * массив с номерами включенных интеров
- */
-    includedInters: Array<intersNum>;
 
-/**
- * возвращает массив для автодополнения
- */
-    getCIInfo(): CompletionItem[];
-/**
- * включает интер для последующей подгрузки
- */
-    includeInter(num: intersNum): void;
-}
 
 /**
  * Интерфейс для Массивов со строками

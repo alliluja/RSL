@@ -13,8 +13,7 @@ import {
 import { DEFAULT_WHITESPACES, STOP_CHARS, varType, kwdNum, SkipComment, intersNum, OLC, MLC_O, MLC_C, DIGITS } from './enums';
 import { ArrayClass, getDefaults, getCIInfoForArray } from './defaults'
 import { getTree, GetFileRequest } from './server';
-import { getBankInter } from './inters/bankinter'
-import { IFAStruct, IIntersResolve, If_s, IArray, IRange, CAbstractBase, IToken } from './interfaces';
+import { IFAStruct, If_s, IArray, IRange, CAbstractBase, IToken } from './interfaces';
 
 class CArray implements IArray{
     _it:Array<string>;
@@ -128,73 +127,12 @@ class Cstr_item_kind extends CArray {
     }
 }
 
-class Cinters extends CArray {
-    constructor () {
-        super();
-        this._it[intersNum.bankinter]             = "bankinter";
-        this._it[intersNum.carrydoc]              = "carrydoc";
-        this._it[intersNum.clbinter]              = "clbinter";
-        this._it[intersNum.clninter]              = "clninter";
-        this._it[intersNum.ctginter]              = "ctginter";
-        this._it[intersNum.devinter]              = "devinter";
-        this._it[intersNum.fminter]               = "fminter";
-        this._it[intersNum.rsbusergroupsinter]    = "rsbusergroupsinter";
-        this._it[intersNum.elexchangeinter]       = "elexchangeinter";
-        this._it[intersNum.mcinter]               = "mcinter";
-        this._it[intersNum.currinter]             = "currinter";
-        this._it[intersNum.securityinter]         = "securityinter";
-        this._it[intersNum.rslcommon]             = "rslcommon";
-        this._it[intersNum.toolsinter]            = "toolsinter";
-    }
-}
-
-class intersResolve implements IIntersResolve {
-    includedInters: Array<intersNum>;
-
-    constructor() { this.includedInters = new Array(); }
-
-    includeInter(num: intersNum) {
-        if (this.includedInters.indexOf(num) < 0)
-            this.includedInters.push(num)
-    }
-
-    getCIInfo(): CompletionItem[] {
-        let CIInfoArray: CompletionItem[] = new Array();
-        this.includedInters.forEach(element => {
-            let tmpArr: CompletionItem[];
-            switch (element) {
-                case intersNum.bankinter                : tmpArr = getCIInfoForArray(getBankInter()); break;
-                //TODO: доделать остальные интеры
-                // case intersNum.carrydoc				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.clbinter				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.clninter				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.ctginter				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.devinter				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.fminter				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.rsbusergroupsinter	: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.elexchangeinter		: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.mcinter				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.currinter				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.securityinter			: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.rslcommon				: tmpArr = getCIInfoForArray(); break;
-                // case intersNum.toolsinter			: tmpArr = getCIInfoForArray(); break;
-                //default: throw("неверный номер интера");
-            }
-            if (tmpArr != undefined) CIInfoArray = CIInfoArray.concat(tmpArr);
-
-        });
-        return CIInfoArray;
-    }
-}
 
  /** Возвращает строковое значение типа объекта*/
 function getStrItemKind(kind: number): string { return STR_ITEM_KIND.str(kind); }
 
  /** Возвращает строковое значение типа переменной*/
 function getTypeStr(typeNum:varType): string { return TYPES.str(typeNum); }
-
-/** Возвращает CIInfo для включенных интеров*/
-export function IntersCIInfo() {return Inters.getCIInfo()}
 
 function InterNamesProcess(str: string): string[] {
     if (str.includes(OLC) || str.includes(MLC_O)) { //если в строку как-то попали комментарии - их надо удалить
@@ -212,12 +150,10 @@ function InterNamesProcess(str: string): string[] {
     return names;
 }
 
-let Inters: intersResolve = new intersResolve();
 let tokensWithEnd:CEnds = new CEnds();
 let TYPES:Ctypes = new Ctypes();
 let KEYWORDS:Ckeywords = new Ckeywords();
 let STR_ITEM_KIND:Cstr_item_kind = new Cstr_item_kind();
-let INTERS:Cinters = new Cinters();
 
 export class CVar extends CAbstractBase {
     private value: string;
@@ -279,10 +215,8 @@ export class CBase extends CAbstractBase {
     addChild(node: any) { this.childs.push(node); }
     setType(type: string) { this.varType_ = type }
 
-    getActualChilds(position: number):Array<CBase> {//FIXME: переделать всю функцию
-        // let isCheckPrivate: boolean = (position == 0)? true: false;
+    getActualChilds(position: number):Array<CBase> {
         let answer: Array<CBase> = new Array();
-        //position = (position == 0)? this.source.length - 3 : position;
         if (position != 0) //Ищем в текущем файле
             this.childs.forEach(parent => {
                 if (parent.range.end < position)
@@ -363,9 +297,7 @@ export class CBase extends CAbstractBase {
                             answer.push(child.CIInfo);
                     });
                 }
-                
             }
-            
         }
         return answer;
     }
@@ -485,7 +417,7 @@ export class CBase extends CAbstractBase {
                         comment = (token.str == OLC) ? this.GetOLC() : this.GetMLC();
                         varObject.Description(comment);
                     }
-                    if (sToken == ",") this.CreateVariable(isPrivate, this.offset/* this.range.start */, isConstant);
+                    if (sToken == ",") this.CreateVariable(isPrivate, this.offset, isConstant);
                     stop = true;
                 } break;
             }
@@ -595,17 +527,12 @@ export class CBase extends CAbstractBase {
         }
         let names: string[] = InterNamesProcess(token);
         names.forEach(nameInter => {
-            let tpl = INTERS.is(nameInter.toLowerCase());
-            if (tpl.first) {
-                Inters.includeInter(tpl.second);
-            }
-            else { //это не интер, запросим открытие такого файла
-                if (!nameInter.endsWith(".mac")) nameInter = nameInter + ".mac";
+            //запросим открытие такого файла
+            if (!nameInter.endsWith(".mac")) nameInter = nameInter + ".mac";
                 GetFileRequest(nameInter);
-            }
         });
     }
-    protected     parse()                         :void 		{
+    protected parse():void 	{
         this.childs = new Array();
         this.Skip();
         let curToken: string;
@@ -709,35 +636,6 @@ class CClass extends CBase {
     updateCIInfo():void {
         this.detail = `${getStrItemKind(this.objKind)}: `;
         this.detail += this.name;
-    }
-}
-/**
- * Выполняет проверку необходимости заново распарсить все файлы.
- * Впервые произошло обращение к объекту класса или
- * если размер массива Импортированных модулей изменился
- * производится повторый парсинг всех подгруженных макросов
- */
-export class Validator {
-    private status: boolean;
-    private importsSize: number;
-
-    constructor() {
-        this.status = true;
-        this.importsSize = 0;
-    }
-
-    /**
-     * Выполняет повторый парсинг всех подгруженных макросов
-     */
-    public exec() {
-        let Imports = getTree();
-        if (this.status || this.importsSize != Imports.length - 1) {
-            this.importsSize = Imports.length - 1;
-            this.status = false;
-            for (let iterator of Imports) {
-                iterator.object.reParsing();
-            }
-        }
     }
 }
 
