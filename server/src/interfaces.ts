@@ -1,5 +1,5 @@
 import { CompletionItemKind, InsertTextFormat, CompletionItem, Location } from 'vscode-languageserver';
-import { intersNum, varType } from './enums';
+import { varType } from './enums';
 import { CBase } from './common';
 /**
  * Интерфейс для массива с импортированными модулями
@@ -7,13 +7,6 @@ import { CBase } from './common';
 export interface IFAStruct {
     uri     : string;
     object  : CBase;
-}
-
-/**
- * Интерфейс для массива с импортированными модулями
- */
-export interface IFindObj extends IFAStruct{
-	range   : IRange;
 }
 
 /**
@@ -56,24 +49,7 @@ export interface IRange {
     end     :number;
 }
 
-/**
- * Интерфейс для класса с интерами
- */
-export interface IIntersResolve {
-/**
- * массив с номерами включенных интеров
- */
-    includedInters: Array<intersNum>;
 
-/**
- * возвращает массив для автодополнения
- */
-    getCIInfo(): CompletionItem[];
-/**
- * включает интер для последующей подгрузки
- */
-    includeInter(num: intersNum): void;
-}
 
 /**
  * Интерфейс для Массивов со строками

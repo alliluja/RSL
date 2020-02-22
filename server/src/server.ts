@@ -8,35 +8,32 @@ import {
     CompletionItem,
     TextDocumentPositionParams,
     Hover,
-    CompletionItemKind,
     Location,
     Definition,
     Position,
+    Diagnostic,
+    DiagnosticSeverity,
 } from 'vscode-languageserver';
 
 
 import
 {
     CBase,
-    Validator,
-    IntersCIInfo,
 } from './common';
 
-import { IFAStruct, IRslSettings, IToken, IFindObj } from  './interfaces';
+import { IFAStruct, IRslSettings, IToken} from  './interfaces';
 import { getDefaults, getCIInfoForArray } from './defaults';
-import { varType } from './enums';
 
 
 let connection = createConnection(ProposedFeatures.all);
 let documents                   : TextDocuments = new TextDocuments();
 let hasConfigurationCapability  : boolean       = false;
 let hasWorkspaceFolderCapability: boolean       = false;
-let hasDiagnosticRelatedInformationCapability: boolean = false;
-let workFolderOpened            : boolean        = false;
+let hasDiagnosticRelatedInformationCapability   = false;
+let workFolderOpened            : boolean       = false;
 const defaultSettings           : IRslSettings  = { import: "ДА" };
 let globalSettings              : IRslSettings  = defaultSettings;
 let documentSettings            : Map<string, Thenable<IRslSettings>> = new Map();
-let validator                   : Validator;
 let Imports                     : Array<IFAStruct>;
 
 export function GetFileRequest(nameInter:string) {
@@ -64,10 +61,10 @@ function getCurObj(uri:string):CBase {
     return obj;
 }
 
-function FindObject(tdpp: TextDocumentPositionParams): IFindObj {
+function FindObject(tdpp: TextDocumentPositionParams): IFAStruct {
     let uri = tdpp.textDocument.uri;
     let CBaseObject  : CBase    = undefined;
-    let findObject   : IFindObj = undefined;
+    let findObject   : IFAStruct = undefined;
     let token        : IToken   = undefined;
     let document     : TextDocument = getCurDoc(tdpp.textDocument.uri);
     let tree         : CBase  = getCurObj(tdpp.textDocument.uri);
@@ -84,7 +81,7 @@ function FindObject(tdpp: TextDocumentPositionParams): IFindObj {
                             if (child.Name === token.str) objects.push(child);
                         });
                     }
-                    if (element.Name === token.str) {
+                    if (element.Name.toLowerCase() === token.str.toLowerCase()) {
                         objects.push(element);
                     }
                 }
@@ -124,7 +121,7 @@ function FindObject(tdpp: TextDocumentPositionParams): IFindObj {
                 }
             }
         }
-        findObject = (CBaseObject != undefined)?{object: CBaseObject, range: CBaseObject.Range, uri: uri}: undefined;
+        findObject = (CBaseObject != undefined)?{object: CBaseObject, uri: uri}: undefined;
     return findObject;
 }
 
@@ -155,7 +152,6 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onInitialized(() => {
-    validator = new Validator();
     Imports   = new Array();
     
     if (!workFolderOpened) connection.sendNotification("noRootFolder"); //не открыта папка, надо ругнуться
@@ -200,10 +196,6 @@ function getDocumentSettings(resource: string): Thenable<IRslSettings> {
 }
 
 documents.onDidClose(e => {
-    // let index = Imports.findIndex((value)=>{if (value[0] == e.document.uri) return true; else return false;})
-    // if (index >= 0) Imports.splice(index, 1);
-    // connection.console.log(`Close file: ${e.document.uri.toString()}`);
-    // пока закомментил, Code нахрена то периодически сам закрывает файлы
     documentSettings.delete(e.document.uri);
 });
 
@@ -214,76 +206,121 @@ documents.onDidChangeContent(change => {
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     globalSettings = await getDocumentSettings(textDocument.uri);
-
+    let text = textDocument.getText();
+    
     let isPresent:boolean = false;
     for (let iterator of Imports) {
         if (iterator.uri == textDocument.uri) {
-            iterator.object = new CBase(textDocument.getText(), 0);
+            iterator.object = new CBase(text, 0);
             isPresent = true;
             break;
         }
     }
     if (!isPresent) {
-        Imports.push({uri: textDocument.uri, object: new CBase(textDocument.getText(), 0)});
+        Imports.push({uri: textDocument.uri, object: new CBase(text, 0)});
     }
+
+    let currentEditor = connection.sendRequest("getActiveTextEditor");
+    currentEditor.then((value:string)=>{
+        if (value == textDocument.uri)
+        {
+            let pattern = /\b(record|array)\b/gi;
+            let m: RegExpExecArray | null;
+        
+            let diagnostics: Diagnostic[] = [];
+            while (m = pattern.exec(text)) {
+                let diagnostic: Diagnostic = {
+                    severity: DiagnosticSeverity.Information,
+                    range: {
+                        start: textDocument.positionAt(m.index),
+                        end: textDocument.positionAt(m.index + m[0].length)
+                    },
+                    message: `Определение ${m[0].toUpperCase()} устарело, от такого надо избавляться по возможности`,
+                    source: 'RSL parser'
+                };
+                /*
+                //добавляет дополнительную информацию к выводу проблемы
+                if (hasDiagnosticRelatedInformationCapability) {
+                    diagnostic.relatedInformation = [
+                        {
+                            location: {
+                                uri: textDocument.uri,
+                                range: Object.assign({}, diagnostic.range)
+                            },
+                            message: 'непонятная надпись'
+                        }
+                    ];
+                }*/
+                diagnostics.push(diagnostic);
+            }
+        
+            // Send the computed diagnostics to VSCode.
+            connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+        }
+    });
+
+
+
+
 }
 
 connection.onDidChangeWatchedFiles(_change => {
     connection.console.log('We received an file change event');
 });
 
+function isNotCommentOrString(tdpp: TextDocumentPositionParams):boolean
+{
+    return true; //TODO: сделать проверку, что курсор не стоит в комментарии или в ""
+}
+
 connection.onCompletion((tdpp: TextDocumentPositionParams): CompletionItem[] => {
-    validator.exec();
     let CompletionItemArray : Array<CompletionItem>  = new Array();
     let document            : TextDocument           = getCurDoc(tdpp.textDocument.uri);
-    let obj                 : IFindObj               = FindObject(tdpp);
+    let obj                 : IFAStruct               = FindObject(tdpp);
     let curPos = document.offsetAt(tdpp.position);
-
-    if (obj != undefined) {     //нашли эту переменную
-        if (obj.object.Type !== "variant") {
-            let objClass: CBase;
-            for (const iterator of Imports) {
-                // objClass = iterator.object.RecursiveFind(obj.object.Type); //поищем в дереве что-то с таким названием, как тип этой переменной (предполагаем, что это должен быть класс)
-                let objArr = iterator.object.getActualChilds(iterator.uri == tdpp.textDocument.uri? curPos: 0);
-                for (const objIter of objArr)
-                {
-                    if (objIter.Name == obj.object.Type)
+    
+    if (isNotCommentOrString(tdpp))
+    {
+        if (obj != undefined) {     //нашли эту переменную
+            if (obj.object.Type !== "variant") {
+                let objClass: CBase;
+                for (const iterator of Imports) {
+                    let objArr = iterator.object.getActualChilds(iterator.uri == tdpp.textDocument.uri? curPos: 0);
+                    for (const objIter of objArr)
                     {
-                        objClass = objIter;
-                        break;
+                        if (objIter.Name == obj.object.Type)
+                        {
+                            objClass = objIter;
+                            break;
+                        }
                     }
+                    if (objClass != undefined) break;
                 }
-                if (objClass != undefined) break;
-            }
-            if (objClass != undefined /* && objClass.ObjKind === CompletionItemKind.Class */){
-                CompletionItemArray = objClass.ChildsCIInfo(true); //получим всю информацию о детях этого класса
-            // else { //не нашли в открытом файле - будем искать дальше
-            //     let Def = getDefaults();
-            //     let ans = Def.find(obj.object.Type);
-            //     if (ans != undefined) {
-            //         CompletionItemArray = ans.ChildsCIInfo();
-            //     }
+                if (objClass != undefined){
+                    CompletionItemArray = objClass.ChildsCIInfo(true); //получим всю информацию о детях
+                }
             }
         }
+        else
+        {
+            Imports.forEach(element => {
+                    let actualChilds = element.object.getActualChilds(element.uri == tdpp.textDocument.uri? curPos: 0);
+                    for (const child of actualChilds) {
+                        CompletionItemArray.push(child.CIInfo);
+                    }
+            });
+            CompletionItemArray = CompletionItemArray.concat(getCIInfoForArray(getDefaults())); //все дефолтные классы, функции и переменные
+        }
     }
-    else {
-          Imports.forEach(element => {
-              if (element.uri == tdpp.textDocument.uri) CompletionItemArray = CompletionItemArray.concat(element.object.ChildsCIInfo(false, curPos, true));
-              else CompletionItemArray = CompletionItemArray.concat(element.object.ChildsCIInfo(true, 0, false));
-          });
-          CompletionItemArray = CompletionItemArray.concat(getCIInfoForArray(getDefaults())); //все дефолтные классы, функции и переменные
-          CompletionItemArray = CompletionItemArray.concat(IntersCIInfo());
-     }
     return CompletionItemArray;
 });
 
 connection.onCompletionResolve((item: CompletionItem): CompletionItem => {return item;});
 
 connection.onHover((tdpp: TextDocumentPositionParams): Hover => {
-    validator.exec();
     let hover    : Hover        =  undefined;
     let document : TextDocument = getCurDoc(tdpp.textDocument.uri);
-    let obj      : IFindObj     = FindObject(tdpp);
+    let obj      : IFAStruct     = FindObject(tdpp);
     let token    : IToken       = getCurObj(tdpp.textDocument.uri).getCurrentToken(document.offsetAt(tdpp.position));
     if (obj != undefined) {
         let CIInfo = obj.object.CIInfo;
@@ -298,8 +335,7 @@ connection.onHover((tdpp: TextDocumentPositionParams): Hover => {
 });
 
 connection.onDefinition((tdpp: TextDocumentPositionParams) => {
-    validator.exec();
-    let obj     : IFindObj     = FindObject(tdpp);
+    let obj     : IFAStruct     = FindObject(tdpp);
     let result  : Definition   = undefined;
     if (obj != undefined) {
             let document: TextDocument = getCurDoc(obj.uri);
@@ -311,45 +347,9 @@ connection.onDefinition((tdpp: TextDocumentPositionParams) => {
                 end  : endPos
             })
     }
-    return (result !== undefined)? result: null; //getDefinitionLocation(tdpp, getCurDoc(tdpp.textDocument.uri));
+    return (result !== undefined)? result: null;
 });
 
 documents.listen(connection);
 
 connection.listen();
-/*
-
-export function getDefinitionLocation(tdpp: TextDocumentPositionParams, document: TextDocument): Definition {
-    let result: Definition;
-    let tree: CBase;
-    let arr = getTree();
-    for (const iterator of arr) {
-        if (iterator.uri == tdpp.textDocument.uri) {
-            tree = iterator.object;
-            break;
-        }
-    }
-    if (tree != undefined) {
-        let curPos = document.offsetAt(tdpp.position);
-        let curToken: [string, number, number] = tree.getCurrentToken(curPos);
-        let obj: CBase;
-        let objArr = tree.getActualChilds(curPos);
-        objArr.forEach(element => {
-            if (element.getName() == curToken[0]) obj = element;
-        });
-        if (obj == undefined) obj = tree.Find(curToken[0]);
-        if (obj != undefined) {
-            let range = obj.getRange();
-            let startPos: Position = document.positionAt(range[0]);
-            startPos.line++;
-            result = Location.create(tdpp.textDocument.uri, {
-                start: startPos,
-                end: startPos
-            })
-        }
-        else return null;
-    }
-    else return null;
-    return result;
-}
-*/

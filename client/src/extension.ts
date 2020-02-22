@@ -1,23 +1,67 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-
 import * as path from 'path';
-import { workspace, ExtensionContext, Uri, commands, window } from 'vscode';
+import { workspace, ExtensionContext, window, DecorationOptions, Range} from 'vscode';
 
 import {
     LanguageClient,
     LanguageClientOptions,
     ServerOptions,
-    TransportKind,
-	RequestType,
-	TextDocument
+    TransportKind
 } from 'vscode-languageclient';
 
 let client: LanguageClient;
+let timeout: NodeJS.Timer | undefined = undefined;
+let activeEditor = window.activeTextEditor;
+
+// create a decorator type that we use to decorate not used variable and macros
+const notUsedVar = window.createTextEditorDecorationType({
+    opacity: '0.5',
+    fontStyle: 'italic'
+});
+
+function updateDecorations()
+{
+    if (!activeEditor)
+    {
+        return;
+    }
+    const regEx = /\b(macro|var|const|array|record)\b\s*(\w+)/gi;
+    const text = activeEditor.document.getText();
+    const decorationArr: DecorationOptions[] = [];
+    let match;
+    let counterMatches: number = 0;
+
+    while (match = regEx.exec(text))
+    {
+        const regEx1 = new RegExp(`\\b${match[2]}\\b`, "gi");
+        const start = activeEditor.document.positionAt(match.index + match[0].length);
+        const end   = activeEditor.document.positionAt(text.length);
+        const  range = new Range(start, end);
+        while (regEx1.exec(activeEditor.document.getText(range)))
+        { 
+            ++counterMatches;//посчитаем сколько раз встречается
+            if (counterMatches > 1)
+                { break; }
+        }
+        if (counterMatches < 1)
+        {
+            const offset      = match[0].length - match[2].length;
+            const startPos    = activeEditor.document.positionAt(match.index + offset);
+            const endPos      = activeEditor.document.positionAt(match.index + offset + match[2].length);
+            const decoration  =
+            {
+                range: new Range(startPos, endPos),
+                hoverMessage: 'Объявление **' + match[2] + '**, не было использовано в данном файле'
+            };
+            decorationArr.push(decoration);
+        }
+        counterMatches = 0;
+    }
+
+    activeEditor.setDecorations(notUsedVar, decorationArr);
+}
 
 export function activate(context: ExtensionContext) {
+    
 	// registerCommands();
     // The server is implemented in node
     let serverModule = context.asAbsolutePath(
@@ -59,20 +103,41 @@ export function activate(context: ExtensionContext) {
     // Start the client. This will also launch the server
 	client.start();
 	client.onReady().then(() => {
-		client.onRequest("getFile", (nameInter : string)/* : Promise<void>*/ => {
-			// return getFile(nameInter);//"workspace.rootPath";
-			getFile(nameInter);//"workspace.rootPath";
+		client.onRequest("getFile", (nameInter : string) => {
+			getFile(nameInter);
+        } );
+		client.onRequest("getActiveTextEditor", () => {
+			return activeEditor.document.uri.toString();
 		} );
 		client.onNotification("noRootFolder", ()=> window.showErrorMessage("Импорт макросов недоступен. Для полноценной работы необходимо открыть папку или рабочую область"));
-	});
+    });
+    
+    if (activeEditor) {
+        triggerUpdateDecorations();
+    }
+
+    workspace.onDidChangeTextDocument(event => {
+        if (activeEditor && event.document === activeEditor.document) {
+                triggerUpdateDecorations();
+        }
+    }, null, context.subscriptions);
+
+    window.onDidChangeActiveTextEditor(editor => {
+        activeEditor = editor;
+        if (editor) {
+            triggerUpdateDecorations();
+        }
+    }, null, context.subscriptions);
+
 }
-	async function getFile(name):Promise<void>{
-		await workspace.findFiles(`**/${name}`, null, 1).then((value)=> {
-			if (value.length) {
-				workspace.openTextDocument(value[0]);
-			}
-		});
-	}
+
+async function getFile(name):Promise<void>{
+    await workspace.findFiles(`**/${name}`, null, 1).then((value)=> {
+        if (value.length) {
+            workspace.openTextDocument(value[0]);
+        }
+    });
+}
 
 export function deactivate(): Thenable<void> | undefined {
     if (!client) {
@@ -80,3 +145,12 @@ export function deactivate(): Thenable<void> | undefined {
     }
     return client.stop();
 }
+
+function triggerUpdateDecorations() {
+    if (timeout) {
+        clearTimeout(timeout);
+        timeout = undefined;
+    }
+    timeout = setTimeout(updateDecorations, 500);
+}
+
