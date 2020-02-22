@@ -1,5 +1,5 @@
 import { CompletionItemKind, InsertTextFormat, CompletionItem, Location } from 'vscode-languageserver';
-import { intersNum, varType } from './enums';
+import { varType } from './enums';
 import { CBase } from './common';
 /**
  * Интерфейс для массива с импортированными модулями

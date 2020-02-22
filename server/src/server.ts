@@ -11,6 +11,8 @@ import {
     Location,
     Definition,
     Position,
+    Diagnostic,
+    DiagnosticSeverity,
 } from 'vscode-languageserver';
 
 
@@ -27,8 +29,8 @@ let connection = createConnection(ProposedFeatures.all);
 let documents                   : TextDocuments = new TextDocuments();
 let hasConfigurationCapability  : boolean       = false;
 let hasWorkspaceFolderCapability: boolean       = false;
-let hasDiagnosticRelatedInformationCapability: boolean = false;
-let workFolderOpened            : boolean        = false;
+let hasDiagnosticRelatedInformationCapability   = false;
+let workFolderOpened            : boolean       = false;
 const defaultSettings           : IRslSettings  = { import: "ДА" };
 let globalSettings              : IRslSettings  = defaultSettings;
 let documentSettings            : Map<string, Thenable<IRslSettings>> = new Map();
@@ -204,64 +206,62 @@ documents.onDidChangeContent(change => {
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     globalSettings = await getDocumentSettings(textDocument.uri);
-
+    let text = textDocument.getText();
+    
     let isPresent:boolean = false;
     for (let iterator of Imports) {
         if (iterator.uri == textDocument.uri) {
-            iterator.object = new CBase(textDocument.getText(), 0);
+            iterator.object = new CBase(text, 0);
             isPresent = true;
             break;
         }
     }
     if (!isPresent) {
-        Imports.push({uri: textDocument.uri, object: new CBase(textDocument.getText(), 0)});
-    }/*
-	// In this simple example we get the settings for every validate run.
-	let settings = await getDocumentSettings(textDocument.uri);
+        Imports.push({uri: textDocument.uri, object: new CBase(text, 0)});
+    }
 
-	// The validator creates diagnostics for all uppercase words length 2 and more
-	let text = textDocument.getText();
-	let pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
+    let currentEditor = connection.sendRequest("getActiveTextEditor");
+    currentEditor.then((value:string)=>{
+        if (value == textDocument.uri)
+        {
+            let pattern = /\b(record|array)\b/gi;
+            let m: RegExpExecArray | null;
+        
+            let diagnostics: Diagnostic[] = [];
+            while (m = pattern.exec(text)) {
+                let diagnostic: Diagnostic = {
+                    severity: DiagnosticSeverity.Information,
+                    range: {
+                        start: textDocument.positionAt(m.index),
+                        end: textDocument.positionAt(m.index + m[0].length)
+                    },
+                    message: `Определение ${m[0].toUpperCase()} устарело, от такого надо избавляться по возможности`,
+                    source: 'RSL parser'
+                };
+                /*
+                //добавляет дополнительную информацию к выводу проблемы
+                if (hasDiagnosticRelatedInformationCapability) {
+                    diagnostic.relatedInformation = [
+                        {
+                            location: {
+                                uri: textDocument.uri,
+                                range: Object.assign({}, diagnostic.range)
+                            },
+                            message: 'непонятная надпись'
+                        }
+                    ];
+                }*/
+                diagnostics.push(diagnostic);
+            }
+        
+            // Send the computed diagnostics to VSCode.
+            connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+        }
+    });
 
-	let problems = 0;
-	let diagnostics: Diagnostic[] = [];
-	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-		problems++;
-		let diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
-			range: {
-				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length)
-			},
-			message: `${m[0]} is all uppercase.`,
-			source: 'ex'
-		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Spelling matters'
-				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Particularly for names'
-				}
-			];
-		}
-		diagnostics.push(diagnostic);
-	}
 
-	// Send the computed diagnostics to VSCode.
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-}
-*/
+
+
 }
 
 connection.onDidChangeWatchedFiles(_change => {

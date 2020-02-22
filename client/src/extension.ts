@@ -24,7 +24,7 @@ function updateDecorations()
     {
         return;
     }
-    const regEx = /\b(macro|var|const)\b\s*(\w+)/gi;
+    const regEx = /\b(macro|var|const|array|record)\b\s*(\w+)/gi;
     const text = activeEditor.document.getText();
     const decorationArr: DecorationOptions[] = [];
     let match;
@@ -32,7 +32,7 @@ function updateDecorations()
 
     while (match = regEx.exec(text))
     {
-        const regEx1 = new RegExp('\\b'+match[2]+'\\b', "gi");
+        const regEx1 = new RegExp(`\\b${match[2]}\\b`, "gi");
         const start = activeEditor.document.positionAt(match.index + match[0].length);
         const end   = activeEditor.document.positionAt(text.length);
         const  range = new Range(start, end);
@@ -105,6 +105,9 @@ export function activate(context: ExtensionContext) {
 	client.onReady().then(() => {
 		client.onRequest("getFile", (nameInter : string) => {
 			getFile(nameInter);
+        } );
+		client.onRequest("getActiveTextEditor", () => {
+			return activeEditor.document.uri.toString();
 		} );
 		client.onNotification("noRootFolder", ()=> window.showErrorMessage("Импорт макросов недоступен. Для полноценной работы необходимо открыть папку или рабочую область"));
     });
