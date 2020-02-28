@@ -4,7 +4,7 @@
    "description": "R-Style Language support",
    "author": "Veniamin Rakov",
    "license": "SEE LICENSE IN 'LICENSE' file",
-   "version": "1.0.6",
+   "version": "1.0.7",
    "icon": "icon.png",
    "bugs": {
       "url": "https://github.com/alliluja/RSL/issues",
@@ -59,6 +59,20 @@
          {
             "scopeName": "MLcomment.injection",
             "path": "./syntaxes/rsl.MLinjection.json",
+            "injectTo": [
+               "source.mac"
+            ]
+			},
+         {
+            "scopeName": "SQLString.injection",
+            "path": "./syntaxes/rsl.SQLinjection.json",
+            "injectTo": [
+               "source.mac"
+            ]
+         },
+         {
+            "scopeName": "SQLSquareBrackets.injection",
+            "path": "./syntaxes/rsl.SQL_SB_injection.json",
             "injectTo": [
                "source.mac"
             ]

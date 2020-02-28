@@ -1,0 +1,51 @@
+{
+	"scopeName": "SQLSquareBrackets.injection",
+	"injectionSelector": "L:string.quoted.single.rsl",
+	"patterns": [
+		{
+			"include": "#sqlKeywords"
+		},
+		{
+			"include": "#sqlFuncs"
+		},
+		{
+			"include": "#sqlComment"
+		},
+		{
+			"include": "#sqlDigit"
+		},
+		{
+			"include": "#sqlSign"
+		},
+		{
+			"include": "#sqlStrings"
+		}
+
+	],
+	"repository": {
+		"sqlKeywords": {
+			"match": "(?i)\\b(if|else|then|end|from|select|insert|into|with|case|when|as|group|by|and|or|not|union|all|in|order|where)\\b",
+			"name": "storage.type.rsl"
+		},
+		"sqlFuncs": {
+			"match": "(?i)\\b(nvl|sum|count)\\b",
+			"name": "entity.name.function.rsl"
+		},
+		"sqlComment": {
+			"match": "(?i)(--\\s*[\\w\\sйцукенгшщзхъфывапролджэячсмитьбю]+)(?=\"|\\n)",
+			"name": "comment.line.double-slash.rsl"
+		},
+		"sqlDigit": {
+			"match": "\\b((0(x|X)[0-9a-fA-F]([0-9a-fA-F']*[0-9a-fA-F])?)|(0(b|B)[01]([01']*[01])?)|(([0-9]([0-9']*[0-9])?\\.?[0-9]*([0-9']*[0-9])?)|(\\.[0-9]([0-9']*[0-9])?))((e|E)(\\+|-)?[0-9]([0-9']*[0-9])?)?)(L|l|UL|ul|u|U|F|f|ll|LL|ull|ULL)?\\b",
+			"name": "constant.numeric.rsl"
+		},
+		"sqlSign": {
+			"match": "%|\\*|/|-|\\+|>|<|=|!",
+			"name": "keyword.operator.rsl"
+		},
+		"sqlStrings": {
+			"match": "'[\\s\\S]+'",
+			"name": "comment.line.double-slash.rsl"
+		}
+	}
+}
