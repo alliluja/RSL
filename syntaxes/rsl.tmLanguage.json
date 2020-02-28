@@ -417,7 +417,7 @@
 		"storage_types": {
 			"patterns": [
 				{
-					"match": "(?i)\\b(bool|string|integer|array|tarray|file|tbfile|tbfilelog)\\b",
+					"match": "(?i)\\b(bool|string|integer|array|tarray|file|tbfile|tbfilelog|record)\\b",
 					"name": "storage.type.rsl"
 				}
 			]
