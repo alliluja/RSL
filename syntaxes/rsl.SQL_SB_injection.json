@@ -24,15 +24,15 @@
 	],
 	"repository": {
 		"sqlKeywords": {
-			"match": "(?i)\\b(if|else|then|end|from|select|insert|into|with|case|when|as|group|by|and|or|not|union|all|in|order|where)\\b",
+			"match": "(?i)\\b(on|dual|if|else|then|end|from|select|insert|into|with|case|when|as|group|by|and|or|not|union|all|in|order|where|update|outer|inner|left|right|join|truncate|table|set|delete)\\b",
 			"name": "storage.type.rsl"
 		},
 		"sqlFuncs": {
-			"match": "(?i)\\b(nvl|sum|count)\\b",
+			"match": "(?i)\\b(nvl|sum|count|decode|min|max|avg|chr)\\b",
 			"name": "entity.name.function.rsl"
 		},
 		"sqlComment": {
-			"match": "(?i)(--\\s*[\\w\\sйцукенгшщзхъфывапролджэячсмитьбю]+)(?=\"|\\n)",
+			"match": "(?i)(--\\s*[\\w\\sйцукенгшщзхъфывапролджэячсмитьбю-,.]+)(?=\"|\\n)",
 			"name": "comment.line.double-slash.rsl"
 		},
 		"sqlDigit": {
@@ -44,7 +44,7 @@
 			"name": "keyword.operator.rsl"
 		},
 		"sqlStrings": {
-			"match": "'[\\s\\S]+'",
+			"match": "'[\\s\\S]+?'",
 			"name": "comment.line.double-slash.rsl"
 		}
 	}
