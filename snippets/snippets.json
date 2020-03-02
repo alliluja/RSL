@@ -23,7 +23,7 @@
          "${1:private} macro ${2:name} (${3:extVar})${4:return}",
          "\tvar result = null;",
          "\t$0",
-         "return result;",
+         "\treturn result;",
          "end;"
       ],
       "description": "private macro"
