@@ -13,6 +13,8 @@
     ],
     // symbols that are auto closed when typing
     "autoClosingPairs": [
+        //{ "open": "if", "close": "end;", "notIn": ["string", "comment"]  },
+        //{ "open": "for", "close": "end;", "notIn": ["string", "comment"]  },
         ["{", "}"],
         ["[", "]"],
         ["(", ")"],

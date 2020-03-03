@@ -1,18 +1,16 @@
 {
-	"$schema": "https://raw.githubusercontent.rslom/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "RSL",
-	"patterns": [
+   "$schema": "https://raw.githubusercontent.rslom/martinring/tmlanguage/master/tmlanguage.json",
+   "name": "RSL",
+   "patterns": [
             {
                "include": "#comments"
             },
             {
-               "match": "[:]\\s*[\\w]{2,}",
-               "name": "storage.type.rsl"
+               "include": "#rsl_types"
             },
             {
-					"match": "(?i)\\b(and|or|not)\\b",
-					"name": "keyword.operator.logical.rsl"
-				},
+               "include": "#logical_operations"
+            },
             {
                "include": "#storage_types"
             },
@@ -29,11 +27,6 @@
                "match": "(?i)\\b(debugbreak|import|break|continue|do|else|for|if|elif|return|while|exit|end)\\b",
                "name": "keyword.control.rsl"
             },
-            {
-               "match": "(?i)\\b(null|true|false|this)\\b",
-               "name": "constant.language.rsl"
-            },
-
             {
                "match": "(?i)\\b(V_GENOBJ|V_DBFFILE|V_TXTFILE|V_ARRAY|V_STRUC|V_FILE|V_UNDEF|V_MONEYL|V_MONEY|V_NUMERIC|V_DECIMAL|V_R2M|V_PROC|V_MEMADDR|V_DTTM|V_TIME|V_DATE|V_BOOL|V_STRING|V_DOUBLEL|V_DOUBLE|V_INTEGER)\\b",
                "name": "storage.type.rsl"
@@ -55,8 +48,10 @@
                "include": "#global_variables"
             },
             {
-               "match": "\\b[\\w]+\\s*(?=[\\(])(?=[\\s\\w,\"@:]*)",
-               "name": "entity.name.function.rsl"
+               "include": "#constant_global"
+            },
+            {
+               "include": "#function_call"
             },
             {
                "match": "\\b[\\w]+(?=[\\[])(?=[\\s\\w,\"@:]*)",
@@ -69,18 +64,33 @@
                "include": "#var_preamb"
             },
             {
-               "match": "\\b[_A-ZЙЦУКЕНГШЩЗХФЫВАПРОЛДЖЭЪЯЧСМИТЬБЮ][A-Z_0-9ЙЦУКЕНГШЩЗХФЫВАПРОЛДЖЭЪЯЧСМИТЬБЮ]+\\b",
-               "name": "constant.other.rsl"
+               "include": "#logical_types"
             },
             {
                "match": "(?i)([а-яa-z0-9_]*)\\.",
                "name": "variable.class.object.rsl"
             }
          ],
-	"repository": {
+   "repository": {
+      "logical_operations": {
+         "match": "(?i)\\b(and|or|not)\\b",
+         "name": "keyword.operator.logical.rsl"
+      },
+      "rsl_types": {
+            "match": "[:]\\s*[@]?\\s*[\\w]{2,}",
+            "name": "storage.type.rsl"
+      },
+      "constant_global": {
+         "match": "\\b[_A-ZЙЦУКЕНГШЩЗХФЫВАПРОЛДЖЭЪЯЧСМИТЬБЮ][A-Z_0-9ЙЦУКЕНГШЩЗХФЫВАПРОЛДЖЭЪЯЧСМИТЬБЮ]+\\b",
+         "name": "constant.other.rsl"
+      },
       "modificators": {
             "match": "(?i)\\b(const|private|local|key)\\b",
             "name": "storage.modifier.rsl"
+      },
+      "function_call": {
+         "match": "\\b[\\w]+\\b\\s*(?=[\\(])(?=[\\s\\w,\"@:]*)",
+         "name": "entity.name.function.rsl"
       },
       "std_functions": {
             "name": "storage.modifier.rsl",
@@ -93,107 +103,106 @@
 
       },
       "output_string": {
-			"patterns": [
-
-				{
-					"begin": "(\\s|^)\\[",
-					"beginCaptures": {
-						"0": {
-							"name": "string.quoted.single.rsl"
-						}
-					},
-					"end": "\\]",
-					"endCaptures": {
-						"0": {
-							"name": "string.quoted.single.rsl"
-						}
-					},
-					"name": "string.quoted.single.rsl"
-				},
-				{
-					"match": "(\\s|^)\\[(\\s*.*)\\]\\s*(?=;|\\()",
-					"name": "string.quoted.single.rsl"
-				}
-			]
+         "patterns": [
+            {
+               "begin": "(\\s|^)\\[",
+               "beginCaptures": {
+                  "0": {
+                     "name": "string.quoted.single.rsl"
+                  }
+               },
+               "end": "\\]",
+               "endCaptures": {
+                  "0": {
+                     "name": "string.quoted.single.rsl"
+                  }
+               },
+               "name": "string.quoted.single.rsl"
+            },
+            {
+               "match": "(\\s|^)\\[(\\s*.*)\\]\\s*(?=;|\\()",
+               "name": "string.quoted.single.rsl"
+            }
+         ]
       },
       "comments": {
-			"patterns": [
-				{
-					"captures": {
-						"1": {
-							"name": "meta.toc-list.banner.block.rsl"
-						}
-					},
-					"match": "^/\\* =(\\s*.*?)\\s*= \\*/$\\n?",
-					"name": "comment.block.rsl"
-				},
-				{
-					"begin": "/\\*",
-					"beginCaptures": {
-						"0": {
-							"name": "punctuation.definition.comment.begin.rsl"
-						}
-					},
-					"end": "\\*/",
-					"endCaptures": {
-						"0": {
-							"name": "punctuation.definition.comment.end.rsl"
-						}
-					},
-					"name": "comment.block.rsl"
-				},
-				{
-					"match": "\\*/.*\\n",
-					"name": "invalid.illegal.stray-comment-end.rsl"
-				},
-				{
-					"captures": {
-						"1": {
-							"name": "meta.toc-list.banner.line.rsl"
-						}
-					},
-					"match": "^// =(\\s*.*?)\\s*=\\s*$\\n?",
-					"name": "comment.line.banner.rsl"
-				},
-				{
-					"begin": "(^[ \\t]+)?(?=//)",
-					"beginCaptures": {
-						"1": {
-							"name": "punctuation.whitespace.comment.leading.rsl"
-						}
-					},
-					"end": "(?!\\G)",
-					"patterns": [
-						{
-							"begin": "//",
-							"beginCaptures": {
-								"0": {
-									"name": "punctuation.definition.comment.rsl"
-								}
-							},
-							"end": "(?=\\n)",
-							"name": "comment.line.double-slash.rsl",
-							"patterns": [
-								{
-									"include": "#line_continuation_character"
-								}
-							]
-						}
-					]
-				}
-			]
+         "patterns": [
+            {
+               "captures": {
+                  "1": {
+                     "name": "meta.toc-list.banner.block.rsl"
+                  }
+               },
+               "match": "^/\\* =(\\s*.*?)\\s*= \\*/$\\n?",
+               "name": "comment.block.rsl"
+            },
+            {
+               "begin": "/\\*",
+               "beginCaptures": {
+                  "0": {
+                     "name": "punctuation.definition.comment.begin.rsl"
+                  }
+               },
+               "end": "\\*/",
+               "endCaptures": {
+                  "0": {
+                     "name": "punctuation.definition.comment.end.rsl"
+                  }
+               },
+               "name": "comment.block.rsl"
+            },
+            {
+               "match": "\\*/.*\\n",
+               "name": "invalid.illegal.stray-comment-end.rsl"
+            },
+            {
+               "captures": {
+                  "1": {
+                     "name": "meta.toc-list.banner.line.rsl"
+                  }
+               },
+               "match": "^// =(\\s*.*?)\\s*=\\s*$\\n?",
+               "name": "comment.line.banner.rsl"
+            },
+            {
+               "begin": "(^[ \\t]+)?(?=//)",
+               "beginCaptures": {
+                  "1": {
+                     "name": "punctuation.whitespace.comment.leading.rsl"
+                  }
+               },
+               "end": "(?!\\G)",
+               "patterns": [
+                  {
+                     "begin": "//",
+                     "beginCaptures": {
+                        "0": {
+                           "name": "punctuation.definition.comment.rsl"
+                        }
+                     },
+                     "end": "(?=\\n)",
+                     "name": "comment.line.double-slash.rsl",
+                     "patterns": [
+                        {
+                           "include": "#line_continuation_character"
+                        }
+                     ]
+                  }
+               ]
+            }
+         ]
       },
       "line_continuation_character": {
-			"patterns": [
-				{
-					"match": "(\\\\)\\n",
-					"captures": {
-						"1": {
-							"name": "constant.character.escape.line-continuation.rsl"
-						}
-					}
-				}
-			]
+         "patterns": [
+            {
+               "match": "(\\\\)\\n",
+               "captures": {
+                  "1": {
+                     "name": "constant.character.escape.line-continuation.rsl"
+                  }
+               }
+            }
+         ]
       },
       "numbers": {
          "patterns": [
@@ -204,232 +213,220 @@
          ]
       },
       "variables": {
-			"patterns": [
-				{
-					"begin": "(?i)\\s*(?=(\\bvar\\b))",
-					"beginCaptures": {
-						"0": {
-							"name": "storage.type.rsl"
-						}
-					},
-					"end": "(?=(\\s*:|\\s*=|\\s*;|\\s*\\)))",
-					"endCaptures": {
-						"0": {
-							"name": "storage.type.rsl"
-						}
-					},
-					"patterns": [
-						{
-							"include": "#var_preamb"
-                  },
-						{
-							"include": "#comments"
+         "patterns": [
+            {
+               "begin": "(?i)(?:\\b(var)\\b)",
+               "beginCaptures": {
+                  "0": {
+                     "name": "storage.type.rsl"
+                  }
+               },
+               "end": "(?=;)",
+               "endCaptures": {
+                  "0": {
+                     "name": "storage.type.rsl"
+                  }
+               },
+               "patterns": [
+                  {
+                     "include": "#comments"
                   },
                   {
-                     "include": "#modificators"
+                     "include": "#function_call"
                   },
                   {
-                     "match": "[\\w*]",
+                     "include": "#logical_types"
+                  },
+                  {
+                     "include": "#logical_operations"
+                  },
+                  {
+                     "include": "#operators"
+                  },
+                  {
+                     "include": "#numbers"
+                  },
+                  {
+                     "include": "#strings"
+                  },
+                  {
+                     "include": "#storage_types"
+                  },
+                  {
+                     "include": "#rsl_types"
+                  },
+                  {
+                     "include": "#constant_global"
+                  },
+                  {
+                     "match": "[\\w]{1,}",
                      "name": "variable.parameter.rsl"
                   }
-					]
-				}
-			]
+               ]
+            }
+         ]
       },
       "global_variables": {
-			"patterns": [
-				{
-					"begin": "\\s*(?=\\{)",
-					"beginCaptures": {
-						"0": {
-							"name": "storage.type.rsl"
-						}
-					},
-					"end": "(?=\\})",
-					"endCaptures": {
-						"0": {
-							"name": "storage.type.rsl"
-						}
-					},
-					"patterns": [
+         "patterns": [
+            {
+               "begin": "\\s*(?=\\{)",
+               "beginCaptures": {
+                  "0": {
+                     "name": "storage.type.rsl"
+                  }
+               },
+               "end": "(?=\\})",
+               "endCaptures": {
+                  "0": {
+                     "name": "storage.type.rsl"
+                  }
+               },
+               "patterns": [
                   {
                      "match": "[\\w*]",
                      "name": "variable.parameter.global.rsl"
                   }
-					]
-				}
-			]
+               ]
+            }
+         ]
       },
       "operators": {
-			"patterns": [
-				{
-					"match": "(?<![\\w$])(sizeof)(?![\\w$])",
-					"name": "keyword.operator.sizeof.rsl"
-				},
-				{
-					"match": "--",
-					"name": "keyword.operator.decrement.rsl"
-				},
-				{
-					"match": "\\+\\+",
-					"name": "keyword.operator.increment.rsl"
-				},
-				{
-					"match": "%=|\\+=|-=|\\*=|(?<!\\()/=",
-					"name": "keyword.operator.assignment.compound.rsl"
-				},
-				{
-					"match": "&=|\\^=|<<=|>>=|\\|=",
-					"name": "keyword.operator.assignment.compound.bitwise.rsl"
-				},
-				{
-					"match": "<<|>>",
-					"name": "keyword.operator.bitwise.shift.rsl"
-				},
-				{
-					"match": "!=|<=|>=|==|<|>",
-					"name": "keyword.operator.comparison.rsl"
-				},
-				{
-					"match": "&|\\||\\^|~",
-					"name": "keyword.operator.rsl"
-				},
-				{
-					"match": "=",
-					"name": "keyword.operator.assignment.rsl"
-				},
-				{
-					"match": "%|\\*|/|-|\\+",
-					"name": "keyword.operator.rsl"
-				},
-				{
-					"begin": "\\?",
-					"beginCaptures": {
-						"0": {
-							"name": "keyword.operator.ternary.rsl"
-						}
-					},
-					"end": ":",
-					"applyEndPatternLast": true,
-					"endCaptures": {
-						"0": {
-							"name": "keyword.operator.ternary.rsl"
-						}
-					},
-					"patterns": [
-						{
-							"include": "#access"
-						},
-						{
-							"include": "#libc"
-						},
-						{
-							"include": "#c_function_call"
-						},
-						{
-							"include": "$base"
-						}
-					]
-				}
-			]
+         "patterns": [
+            {
+               "match": "(?<![\\w$])(sizeof)(?![\\w$])",
+               "name": "keyword.operator.sizeof.rsl"
+            },
+            {
+               "match": "--",
+               "name": "keyword.operator.decrement.rsl"
+            },
+            {
+               "match": "\\+\\+",
+               "name": "keyword.operator.increment.rsl"
+            },
+            {
+               "match": "!=|<=|>=|==|<|>",
+               "name": "keyword.operator.comparison.rsl"
+            },
+            {
+               "match": "&|\\||\\^|~",
+               "name": "keyword.operator.rsl"
+            },
+            {
+               "match": "=",
+               "name": "keyword.operator.assignment.rsl"
+            },
+            {
+               "match": "%|\\*|/|-|\\+",
+               "name": "keyword.operator.rsl"
+            }
+         ]
       },
       "strings": {
-			"patterns": [
-				{
-					"begin": "\"",
-					"beginCaptures": {
-						"0": {
-							"name": "punctuation.definition.string.begin.rsl"
-						}
-					},
-					"end": "\"",
-					"endCaptures": {
-						"0": {
-							"name": "punctuation.definition.string.end.rsl"
-						}
-					},
-					"name": "string.quoted.double.rsl",
-					"patterns": [
-						{
-							"include": "#string_escaped_char"
-						},
-						{
-							"include": "#string_placeholder"
-						},
-						{
-							"include": "#line_continuation_character"
-						}
-					]
+         "patterns": [
+            {
+               "begin": "\"",
+               "beginCaptures": {
+                  "0": {
+                     "name": "punctuation.definition.string.begin.rsl"
+                  }
+               },
+               "end": "\"",
+               "endCaptures": {
+                  "0": {
+                     "name": "punctuation.definition.string.end.rsl"
+                  }
+               },
+               "name": "string.quoted.double.rsl",
+               "patterns": [
+                  {
+                     "include": "#string_escaped_char"
+                  },
+                  {
+                     "include": "#string_placeholder"
+                  },
+                  {
+                     "include": "#line_continuation_character"
+                  }
+               ]
             },
-				{
-					"begin": "'",
-					"beginCaptures": {
-						"0": {
-							"name": "punctuation.definition.string.begin.rsl"
-						}
-					},
-					"end": "'",
-					"endCaptures": {
-						"0": {
-							"name": "punctuation.definition.string.end.rsl"
-						}
-					},
-					"name": "string.quoted.single.rsl",
-					"patterns": [
-						{
-							"include": "#string_escaped_char"
-						},
-						{
-							"include": "#line_continuation_character"
-						}
-					]
-				}
-			]
+            {
+               "begin": "'",
+               "beginCaptures": {
+                  "0": {
+                     "name": "punctuation.definition.string.begin.rsl"
+                  }
+               },
+               "end": "'",
+               "endCaptures": {
+                  "0": {
+                     "name": "punctuation.definition.string.end.rsl"
+                  }
+               },
+               "name": "string.quoted.single.rsl",
+               "patterns": [
+                  {
+                     "include": "#string_escaped_char"
+                  },
+                  {
+                     "include": "#line_continuation_character"
+                  }
+               ]
+            }
+         ]
       },
       "string_escaped_char": {
-			"patterns": [
-				{
-					"match": "(?x)\\\\ (\n\\\\             |\n[abefnprtv'\"?]   |\n[0-3]\\d{,2}     |\n[4-7]\\d?        |\nx[a-fA-F0-9]{,2} |\nu[a-fA-F0-9]{,4} |\nU[a-fA-F0-9]{,8} )",
-					"name": "constant.character.escape.rsl"
-				},
-				{
-					"match": "\\\\.",
-					"name": "invalid.illegal.unknown-escape.rsl"
-				}
-			]
+         "patterns": [
+            {
+               "match": "(?x)\\\\ (\n\\\\             |\n[abefnprtv'\"?]   |\n[0-3]\\d{,2}     |\n[4-7]\\d?        |\nx[a-fA-F0-9]{,2} |\nu[a-fA-F0-9]{,4} |\nU[a-fA-F0-9]{,8} )",
+               "name": "constant.character.escape.rsl"
+            },
+            {
+               "match": "\\\\.",
+               "name": "invalid.illegal.unknown-escape.rsl"
+            }
+         ]
       },
       "string_placeholder": {
-			"patterns": [
-				{
-					"match": "(?x) %\n(\\d+\\$)?                           # field (argument #)\n[#0\\- +']*                          # flags\n[,;:_]?                              # separator character (AltiVec)\n((-?\\d+)|\\*(-?\\d+\\$)?)?          # minimum field width\n(\\.((-?\\d+)|\\*(-?\\d+\\$)?)?)?    # precision\n(hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)? # length modifier\n[diouxXDOUeEfFgGaACcSspn%]           # conversion type",
-					"name": "constant.other.placeholder.rsl"
-				},
-				{
-					"match": "(%)(?!\"\\s*(PRI|SCN))",
-					"captures": {
-						"1": {
-							"name": "invalid.illegal.placeholder.rsl"
-						}
-					}
-				}
-			]
-		},
-		"storage_types": {
-			"patterns": [
-				{
-					"match": "(?i)\\b(bool|string|integer|array|tarray|file|tbfile|tbfilelog|record)\\b",
-					"name": "storage.type.rsl"
-				}
-			]
+         "patterns": [
+            {
+               "match": "(?x) %\n(\\d+\\$)?                           # field (argument #)\n[#0\\- +']*                          # flags\n[,;:_]?                              # separator character (AltiVec)\n((-?\\d+)|\\*(-?\\d+\\$)?)?          # minimum field width\n(\\.((-?\\d+)|\\*(-?\\d+\\$)?)?)?    # precision\n(hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)? # length modifier\n[diouxXDOUeEfFgGaACcSspn%]           # conversion type",
+               "name": "constant.other.placeholder.rsl"
+            },
+            {
+               "match": "(%)(?!\"\\s*(PRI|SCN))",
+               "captures": {
+                  "1": {
+                     "name": "invalid.illegal.placeholder.rsl"
+                  }
+               }
+            }
+         ]
+      },
+      "storage_types": {
+         "patterns": [
+            {
+               "match": "(?i)\\b(bool|string|integer|array|tarray|file|tbfile|tbfilelog|record|object)\\b",
+               "name": "storage.type.rsl"
+            }
+         ]
+      },
+      "logical_types": {
+         "patterns": [
+            {
+               "match": "(?i)\\b(null|true|false|this)\\b",
+               "name": "constant.language.rsl"
+            }
+         ]
       },
       "var_preamb": {
-			"patterns": [
-				{
-					"match": "(?i)\\b(var)\\b",
-					"name": "storage.type.rsl"
-				}
-			]
-		}
+         "patterns": [
+            {
+               "match": "(?i)\\b(var)\\b",
+               "name": "storage.type.rsl"
+            }
+         ]
+      }
    },
-	"scopeName": "source.mac"
+   "scopeName": "source.mac"
 }

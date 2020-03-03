@@ -23,7 +23,7 @@
          "${1:private} macro ${2:name} (${3:extVar})${4:return}",
          "\tvar result = null;",
          "\t$0",
-         "return result;",
+         "\treturn result;",
          "end;"
       ],
       "description": "private macro"
@@ -120,12 +120,12 @@
       "description": "FIXME:"
    },
 
-   "warn": {
-      "prefix": "warn",
-      "body": [
-         "WARNING!!! $0"
+   "tbFile": {
+      "prefix": "tbf",
+      "body"  : [
+         "TBFile(\"${1:name}\" , \"${2|R,W|}\", ${3|0,1,2,3,4,5,6,7,8,9|}, \"$1.dbt\" , \"${4:bank}.def\");$0"
       ],
-      "description": "WARN:"
+      "description": "Объявление файла TBFile"
    }
 
 }

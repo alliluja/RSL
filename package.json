@@ -4,7 +4,7 @@
    "description": "R-Style Language support",
    "author": "Veniamin Rakov",
    "license": "SEE LICENSE IN 'LICENSE' file",
-   "version": "1.0.9",
+   "version": "1.0.10",
    "icon": "icon.png",
    "bugs": {
       "url": "https://github.com/alliluja/RSL/issues",
@@ -41,9 +41,24 @@
                ".mac"
             ],
             "configuration": "./language-configuration.json"
+         },
+         {
+            "id": "fchanges",
+            "extensions": [
+               ".txt"
+            ],
+            "filenames": [
+               "fchanges"
+            ],
+            "configuration": "./language-configuration.json"
          }
       ],
       "grammars": [
+         {
+            "language": "fchanges",
+            "scopeName": "source.txt",
+            "path": "./syntaxes/fchanges.tmLanguage.json"
+         },
          {
             "language": "rsl",
             "scopeName": "source.mac",
@@ -62,7 +77,7 @@
             "injectTo": [
                "source.mac"
             ]
-			},
+         },
          {
             "scopeName": "SQLString.injection",
             "path": "./syntaxes/rsl.SQLinjection.json",
