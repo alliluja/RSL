@@ -1,0 +1,72 @@
+{
+	"$schema": "https://raw.githubusercontent.rslom/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "fchanges",
+	"patterns": [
+            {
+               "include": "#version"
+            },
+            {
+               "include": "#comments"
+            },
+            {
+               "include": "#keyword"
+            },
+            {
+               "include": "#dbt"
+            },
+            {
+               "include": "#mac"
+            }
+         ],
+	"repository": {
+      "comments": {
+         "begin": "//",
+         "beginCaptures": {
+            "0": {
+               "name": "punctuation.definition.comment.txt"
+            }
+         },
+         "end": "(?=\\n)",
+         "name": "comment.line.double-slash.txt",
+         "patterns": [
+            {
+               "match": "[\\s\\S]*",
+               "name": "comment.line.double-slash.txt"
+            }
+         ]
+      },
+      "version": {
+         "patterns": [
+            {
+               "match": "(?i)\\bversion\\b\\s*(5.50.003.[\\d]{2,3})",
+               "name": "constant.numeric.txt"
+            }
+         ]
+      },
+      "keyword": {
+         "patterns": [
+            {
+               "match": "(?i)\\b(BUTIL|NEW|NORW|DISTR|FINAL|EXEC|RESERVE|REMOVE)\\b",
+               "name": "entity.name.function.txt"
+            }
+         ]
+      },
+      "dbt": {
+         "patterns": [
+            {
+               "match": "(?i)\\b([\\w$_]+.dbt)\\b",
+               "name": "storage.type.txt"
+            }
+         ]
+      },
+      "mac": {
+         "patterns": [
+            {
+               "match": "(?i)\\b([\\w_]+.mac)\\b",
+               "name": "keyword.control.txt"
+            }
+         ]
+      }
+   },
+	"scopeName": "source.txt"
+}

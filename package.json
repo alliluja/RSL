@@ -41,9 +41,24 @@
                ".mac"
             ],
             "configuration": "./language-configuration.json"
+         },
+         {
+            "id": "fchanges",
+            "extensions": [
+               ".txt"
+            ],
+            "filenames": [
+               "fchanges"
+            ],
+            "configuration": "./language-configuration.json"
          }
       ],
       "grammars": [
+         {
+            "language": "fchanges",
+            "scopeName": "source.txt",
+            "path": "./syntaxes/fchanges.tmLanguage.json"
+         },
          {
             "language": "rsl",
             "scopeName": "source.mac",
@@ -62,7 +77,7 @@
             "injectTo": [
                "source.mac"
             ]
-			},
+         },
          {
             "scopeName": "SQLString.injection",
             "path": "./syntaxes/rsl.SQLinjection.json",
