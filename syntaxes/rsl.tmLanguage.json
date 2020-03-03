@@ -6,12 +6,10 @@
                "include": "#comments"
             },
             {
-               "match": "[:]\\s*[@]?\\s*[\\w]{2,}",
-               "name": "storage.type.rsl"
+               "include": "#rsl_types"
             },
             {
-               "match": "(?i)\\b(and|or|not)\\b",
-               "name": "keyword.operator.logical.rsl"
+               "include": "#logical_operations"
             },
             {
                "include": "#storage_types"
@@ -50,6 +48,9 @@
                "include": "#global_variables"
             },
             {
+               "include": "#constant_global"
+            },
+            {
                "include": "#function_call"
             },
             {
@@ -66,15 +67,23 @@
                "include": "#logical_types"
             },
             {
-               "match": "\\b[_A-ZЙЦУКЕНГШЩЗХФЫВАПРОЛДЖЭЪЯЧСМИТЬБЮ][A-Z_0-9ЙЦУКЕНГШЩЗХФЫВАПРОЛДЖЭЪЯЧСМИТЬБЮ]+\\b",
-               "name": "constant.other.rsl"
-            },
-            {
                "match": "(?i)([а-яa-z0-9_]*)\\.",
                "name": "variable.class.object.rsl"
             }
          ],
    "repository": {
+      "logical_operations": {
+         "match": "(?i)\\b(and|or|not)\\b",
+         "name": "keyword.operator.logical.rsl"
+      },
+      "rsl_types": {
+            "match": "[:]\\s*[@]?\\s*[\\w]{2,}",
+            "name": "storage.type.rsl"
+      },
+      "constant_global": {
+         "match": "\\b[_A-ZЙЦУКЕНГШЩЗХФЫВАПРОЛДЖЭЪЯЧСМИТЬБЮ][A-Z_0-9ЙЦУКЕНГШЩЗХФЫВАПРОЛДЖЭЪЯЧСМИТЬБЮ]+\\b",
+         "name": "constant.other.rsl"
+      },
       "modificators": {
             "match": "(?i)\\b(const|private|local|key)\\b",
             "name": "storage.modifier.rsl"
@@ -95,7 +104,6 @@
       },
       "output_string": {
          "patterns": [
-
             {
                "begin": "(\\s|^)\\[",
                "beginCaptures": {
@@ -207,7 +215,7 @@
       "variables": {
          "patterns": [
             {
-               "begin": "(?i)(?:\\bvar\\b)",
+               "begin": "(?i)(?:\\b(var)\\b)",
                "beginCaptures": {
                   "0": {
                      "name": "storage.type.rsl"
@@ -230,6 +238,9 @@
                      "include": "#logical_types"
                   },
                   {
+                     "include": "#logical_operations"
+                  },
+                  {
                      "include": "#operators"
                   },
                   {
@@ -242,7 +253,10 @@
                      "include": "#storage_types"
                   },
                   {
-                     "include": "#modificators"
+                     "include": "#rsl_types"
+                  },
+                  {
+                     "include": "#constant_global"
                   },
                   {
                      "match": "[\\w]{1,}",
@@ -291,18 +305,6 @@
                "name": "keyword.operator.increment.rsl"
             },
             {
-               "match": "%=|\\+=|-=|\\*=|(?<!\\()/=",
-               "name": "keyword.operator.assignment.compound.rsl"
-            },
-            {
-               "match": "&=|\\^=|<<=|>>=|\\|=",
-               "name": "keyword.operator.assignment.compound.bitwise.rsl"
-            },
-            {
-               "match": "<<|>>",
-               "name": "keyword.operator.bitwise.shift.rsl"
-            },
-            {
                "match": "!=|<=|>=|==|<|>",
                "name": "keyword.operator.comparison.rsl"
             },
@@ -317,35 +319,6 @@
             {
                "match": "%|\\*|/|-|\\+",
                "name": "keyword.operator.rsl"
-            },
-            {
-               "begin": "\\?",
-               "beginCaptures": {
-                  "0": {
-                     "name": "keyword.operator.ternary.rsl"
-                  }
-               },
-               "end": ":",
-               "applyEndPatternLast": true,
-               "endCaptures": {
-                  "0": {
-                     "name": "keyword.operator.ternary.rsl"
-                  }
-               },
-               "patterns": [
-                  {
-                     "include": "#access"
-                  },
-                  {
-                     "include": "#libc"
-                  },
-                  {
-                     "include": "#c_function_call"
-                  },
-                  {
-                     "include": "$base"
-                  }
-               ]
             }
          ]
       },
