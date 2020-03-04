@@ -166,6 +166,14 @@ connection.onInitialized(() => {
             connection.console.log('Workspace folder change event received.');
         });
     }
+
+    connection.onRequest("getMacros", () => {
+        let result:string[] = [];
+        Imports.forEach(element=>{
+            result.push(element.uri);
+        });
+        return result;
+    } );
 });
 
 connection.onDidChangeConfiguration(change => {
