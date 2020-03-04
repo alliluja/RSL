@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { workspace, ExtensionContext, window, DecorationOptions, Range} from 'vscode';
+import { workspace, ExtensionContext, window, DecorationOptions, Range, commands, StatusBarItem, StatusBarAlignment} from 'vscode';
 
 import {
     LanguageClient,
@@ -11,6 +11,7 @@ import {
 let client: LanguageClient;
 let timeout: NodeJS.Timer | undefined = undefined;
 let activeEditor = window.activeTextEditor;
+let myStatusBarItem: StatusBarItem;
 
 // create a decorator type that we use to decorate not used variable and macros
 const notUsedVar = window.createTextEditorDecorationType({
@@ -59,6 +60,8 @@ function updateDecorations()
 
     activeEditor.setDecorations(notUsedVar, decorationArr);
 }
+
+
 
 export function activate(context: ExtensionContext) {
     
@@ -109,6 +112,9 @@ export function activate(context: ExtensionContext) {
 		client.onRequest("getActiveTextEditor", () => {
 			return activeEditor.document.uri.toString();
 		} );
+		client.onRequest("updateStatusBar", (value) => {
+			updateStatusBarItem(value);
+		} );
 		client.onNotification("noRootFolder", ()=> window.showErrorMessage("Импорт макросов недоступен. Для полноценной работы необходимо открыть папку или рабочую область"));
     });
     
@@ -129,6 +135,39 @@ export function activate(context: ExtensionContext) {
         }
     }, null, context.subscriptions);
 
+
+	// register a command that is invoked when the status bar
+	// item is selected
+	const myCommandId = 'rsl.showMacroFiles';
+	context.subscriptions.push(commands.registerCommand(myCommandId, () => {
+        window.showInputBox({placeHolder: "начните вводить название макроса", prompt:"один\nдва\nтри\nчетыре"});
+		//window.showInformationMessage(`Блин, не надо было нажимать`);
+	}));
+
+	// create a new status bar item that we can now manage
+	myStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 500);
+	myStatusBarItem.command = myCommandId;
+	context.subscriptions.push(myStatusBarItem);
+
+	// register some listener that make sure the status bar 
+	// item always up-to-date
+	// subscriptions.push(window.onDidChangeActiveTextEditor(updateStatusBar));
+	// subscriptions.push(window.onDidChangeTextEditorSelection(updateStatusBar));
+
+	// update status bar item once at start
+    updateStatusBarItem(0);
+
+}
+
+function updateStatusBarItem(n:number)
+{
+    if (n > 0) {
+        myStatusBarItem.text = `$(file) ${n} макросов`; //https://code.visualstudio.com/api/references/icons-in-labels
+        myStatusBarItem.tooltip = "Показать список";
+        myStatusBarItem.show();
+    } else {
+        myStatusBarItem.hide();
+    }
 }
 
 async function getFile(name):Promise<void>{
