@@ -228,7 +228,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         Imports.push({uri: textDocument.uri, object: new CBase(text, 0)});
     }
 
-    connection.sendRequest("updateStatusBar", Imports.length-1); //обновим статус строку
+    connection.sendRequest("updateStatusBar", Imports.length); //обновим статус строку
 
     let currentEditor = connection.sendRequest("getActiveTextEditor");
     currentEditor.then((value:string)=>{
