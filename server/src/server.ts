@@ -209,7 +209,7 @@ documents.onDidClose(e => {
 
 let prevImportsSize : number = 0;
 documents.onDidChangeContent(change => {
-    connection.console.log(`Парсинг файла: ${change.document.uri.toString()}`);
+    //connection.console.log(`Парсинг файла: ${change.document.uri.toString()}`);
     validateTextDocument(change.document);
     if (Imports.length-1 != prevImportsSize)
         { connection.sendRequest("updateStatusBar", Imports.length-1); }
