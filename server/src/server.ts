@@ -207,14 +207,9 @@ documents.onDidClose(e => {
     documentSettings.delete(e.document.uri);
 });
 
-let prevImportsSize : number = 0;
 documents.onDidChangeContent(change => {
     //connection.console.log(`Парсинг файла: ${change.document.uri.toString()}`);
     validateTextDocument(change.document);
-    if (Imports.length-1 != prevImportsSize)
-        { connection.sendRequest("updateStatusBar", Imports.length-1); }
-
-    prevImportsSize = Imports.length-1;
 });
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
@@ -232,6 +227,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     if (!isPresent) {
         Imports.push({uri: textDocument.uri, object: new CBase(text, 0)});
     }
+
+    connection.sendRequest("updateStatusBar", Imports.length-1); //обновим статус строку
 
     let currentEditor = connection.sendRequest("getActiveTextEditor");
     currentEditor.then((value:string)=>{
