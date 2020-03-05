@@ -1,5 +1,8 @@
 import * as path from 'path';
-import { workspace, ExtensionContext, window, DecorationOptions, Range} from 'vscode';
+import { workspace, ExtensionContext, window, DecorationOptions,
+         Range, commands, StatusBarItem, StatusBarAlignment,
+         QuickPickItem
+        } from 'vscode';
 
 import {
     LanguageClient,
@@ -11,6 +14,63 @@ import {
 let client: LanguageClient;
 let timeout: NodeJS.Timer | undefined = undefined;
 let activeEditor = window.activeTextEditor;
+let myStatusBarItem: StatusBarItem;
+
+class FileItem implements QuickPickItem {
+
+    label           : string;
+    description     : string;
+    // detail:string;
+    public isThatDoc:boolean;
+    
+    constructor(public MacUri: string) {
+        this.isThatDoc = activeEditor.document.uri.toString()== MacUri;
+        this.label = '$(file) '+ path.basename(MacUri);
+        // this.detail = ""; //вместо дескрипшн, выводится под лейблом
+        this.description = this.isThatDoc
+        ? 'Текщий файл'
+        : path.dirname(path.relative(workspace.workspaceFolders[0].uri.toString(), MacUri));
+    }
+}
+
+async function quickOpen(uri:string) {
+    if (uri) {
+        for (const curDoc of workspace.textDocuments)
+        {
+            if (curDoc.uri.toString() == uri)
+            {
+                await window.showTextDocument(curDoc);
+                break;
+            }
+        }
+    }
+}
+
+/**
+ * Shows a pick list using window.showQuickPick().
+ */
+async function showQuickPick() {
+    let macros = client.sendRequest("getMacros");
+    const input = window.createQuickPick<FileItem>();
+    input.placeholder = 'Начните вводить имя';
+
+    macros.then((value:string[])=>{
+        let qpArr:FileItem[] = [];
+
+        value.forEach(element=>{
+            qpArr.push(new FileItem(element));
+        });
+        input.items = qpArr;
+        input.show();
+
+        input.onDidAccept(()=>{
+            if(!input.selectedItems[0].isThatDoc)
+            {
+                quickOpen(input.selectedItems[0].MacUri);
+            }
+        });
+    });
+}
 
 // create a decorator type that we use to decorate not used variable and macros
 const notUsedVar = window.createTextEditorDecorationType({
@@ -60,9 +120,11 @@ function updateDecorations()
     activeEditor.setDecorations(notUsedVar, decorationArr);
 }
 
+
+
 export function activate(context: ExtensionContext) {
     
-	// registerCommands();
+    // registerCommands();
     // The server is implemented in node
     let serverModule = context.asAbsolutePath(
         path.join('server', 'out', 'server.js')
@@ -101,15 +163,18 @@ export function activate(context: ExtensionContext) {
     );
 
     // Start the client. This will also launch the server
-	client.start();
-	client.onReady().then(() => {
-		client.onRequest("getFile", (nameInter : string) => {
-			getFile(nameInter);
+    client.start();
+    client.onReady().then(() => {
+        client.onRequest("getFile", (nameInter : string) => {
+            getFile(nameInter);
         } );
-		client.onRequest("getActiveTextEditor", () => {
-			return activeEditor.document.uri.toString();
-		} );
-		client.onNotification("noRootFolder", ()=> window.showErrorMessage("Импорт макросов недоступен. Для полноценной работы необходимо открыть папку или рабочую область"));
+        client.onRequest("getActiveTextEditor", () => {
+            return activeEditor.document.uri.toString();
+        } );
+        client.onRequest("updateStatusBar", (value) => {
+            updateStatusBarItem(value);
+        } );
+        client.onNotification("noRootFolder", ()=> window.showErrorMessage("Импорт макросов недоступен. Для полноценной работы необходимо открыть папку или рабочую область"));
     });
     
     if (activeEditor) {
@@ -129,6 +194,31 @@ export function activate(context: ExtensionContext) {
         }
     }, null, context.subscriptions);
 
+    // register a command that is invoked when the status bar
+    // item is selected
+    const myCommandId = 'rsl.showMacroFiles';
+    context.subscriptions.push(commands.registerCommand(myCommandId, () => {
+        showQuickPick();
+    }));
+
+    // create a new status bar item that we can now manage
+    myStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 500);
+    myStatusBarItem.command = myCommandId;
+    context.subscriptions.push(myStatusBarItem);
+    
+    updateStatusBarItem(0);
+
+}
+
+function updateStatusBarItem(n:number)
+{
+    if (n > 0) {
+        myStatusBarItem.text = `$(file) ${n} макросов`; //https://code.visualstudio.com/api/references/icons-in-labels
+        myStatusBarItem.tooltip = "Показать список";
+        myStatusBarItem.show();
+    } else {
+        myStatusBarItem.hide();
+    }
 }
 
 async function getFile(name):Promise<void>{

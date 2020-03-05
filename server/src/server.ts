@@ -166,6 +166,14 @@ connection.onInitialized(() => {
             connection.console.log('Workspace folder change event received.');
         });
     }
+
+    connection.onRequest("getMacros", () => {
+        let result:string[] = [];
+        Imports.forEach(element=>{
+            result.push(element.uri);
+        });
+        return result;
+    } );
 });
 
 connection.onDidChangeConfiguration(change => {
@@ -199,9 +207,14 @@ documents.onDidClose(e => {
     documentSettings.delete(e.document.uri);
 });
 
+let prevImportsSize : number = 0;
 documents.onDidChangeContent(change => {
-    connection.console.log(`Парсинг файла: ${change.document.uri.toString()}`);
+    //connection.console.log(`Парсинг файла: ${change.document.uri.toString()}`);
     validateTextDocument(change.document);
+    if (Imports.length-1 != prevImportsSize)
+        { connection.sendRequest("updateStatusBar", Imports.length-1); }
+
+    prevImportsSize = Imports.length-1;
 });
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
@@ -258,10 +271,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
             connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
         }
     });
-
-
-
-
 }
 
 connection.onDidChangeWatchedFiles(_change => {
@@ -270,7 +279,30 @@ connection.onDidChangeWatchedFiles(_change => {
 
 function isNotCommentOrString(tdpp: TextDocumentPositionParams):boolean
 {
-    return true; //TODO: сделать проверку, что курсор не стоит в комментарии или в ""
+    let document      : TextDocument = getCurDoc(tdpp.textDocument.uri);
+    let text          : string       = document.getText();
+    let isNotInPattern: boolean      = true;
+    let patterns = [];
+    patterns.push(/(\/\/)(.+?)(?=[\n\r])/g);//однострочный комментарий
+    patterns.push(/\*[^*]*\*+(?:[^/*][^*]*\*+)*/g); //многострочный комментарий
+    patterns.push(/\"(\\.|[^\"])*\"/g); //строка
+    // patterns.push(/\'(\\.|[^\'])*\'/g); //строка //хз, с этим зависает
+
+    let m: RegExpExecArray | null;
+
+    for (const pattern of patterns)
+    {
+        if (!isNotInPattern) break;
+
+        while ((m = pattern.exec(text)) && isNotInPattern) {
+            let offset = document.offsetAt(tdpp.position);
+            if (offset >= m.index && offset <=m.index+m[0].length)
+            {
+                isNotInPattern = false;
+            }
+        }
+    }
+    return isNotInPattern;
 }
 
 connection.onCompletion((tdpp: TextDocumentPositionParams): CompletionItem[] => {
@@ -319,33 +351,40 @@ connection.onCompletionResolve((item: CompletionItem): CompletionItem => {return
 
 connection.onHover((tdpp: TextDocumentPositionParams): Hover => {
     let hover    : Hover        =  undefined;
-    let document : TextDocument = getCurDoc(tdpp.textDocument.uri);
-    let obj      : IFAStruct     = FindObject(tdpp);
-    let token    : IToken       = getCurObj(tdpp.textDocument.uri).getCurrentToken(document.offsetAt(tdpp.position));
-    if (obj != undefined) {
-        let CIInfo = obj.object.CIInfo;
-        let comment:string = (CIInfo.documentation.toString().length > 0)? ` \n\r${CIInfo.documentation.toString()}`: "";
-        hover = {
-            contents: `${CIInfo.detail}${comment}`,
-            range : { start: document.positionAt(token.range.start),
-                      end  : document.positionAt(token.range.end) }
+    if (isNotCommentOrString(tdpp))
+    {
+        let document : TextDocument = getCurDoc(tdpp.textDocument.uri);
+        let obj      : IFAStruct     = FindObject(tdpp);
+        let token    : IToken       = getCurObj(tdpp.textDocument.uri).getCurrentToken(document.offsetAt(tdpp.position));
+        if (obj != undefined) {
+            let CIInfo = obj.object.CIInfo;
+            let comment:string = (CIInfo.documentation.toString().length > 0)? ` \n\r${CIInfo.documentation.toString()}`: "";
+            hover = {
+                contents: `${CIInfo.detail}${comment}`,
+                range : { start: document.positionAt(token.range.start),
+                          end  : document.positionAt(token.range.end) }
+            }
         }
     }
+
     return hover != undefined? hover: null;
 });
 
 connection.onDefinition((tdpp: TextDocumentPositionParams) => {
     let obj     : IFAStruct     = FindObject(tdpp);
     let result  : Definition   = undefined;
-    if (obj != undefined) {
-            let document: TextDocument = getCurDoc(obj.uri);
-            let range = obj.object.Range;
-            let startPos: Position = document.positionAt(range.start);
-            let endPos  : Position = document.positionAt(range.start + obj.object.Name.length);
-            result = Location.create(obj.uri, {
-                start: startPos,
-                end  : endPos
-            })
+    if (isNotCommentOrString(tdpp))
+    {
+        if (obj != undefined) {
+                let document: TextDocument = getCurDoc(obj.uri);
+                let range = obj.object.Range;
+                let startPos: Position = document.positionAt(range.start);
+                let endPos  : Position = document.positionAt(range.start + obj.object.Name.length);
+                result = Location.create(obj.uri, {
+                    start: startPos,
+                    end  : endPos
+                })
+        }
     }
     return (result !== undefined)? result: null;
 });
