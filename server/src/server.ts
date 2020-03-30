@@ -12,18 +12,14 @@ import {
     Definition,
     Position,
     Diagnostic,
-    DiagnosticSeverity,
+    DiagnosticSeverity
 } from 'vscode-languageserver';
-
-
-import
-{
-    CBase,
-} from './common';
 
 import { IFAStruct, IRslSettings, IToken} from  './interfaces';
 import { getDefaults, getCIInfoForArray } from './defaults';
 
+import { CBase } from './common';
+import { getSymbols } from './docsymbols';
 
 let connection = createConnection(ProposedFeatures.all);
 let documents                   : TextDocuments = new TextDocuments();
@@ -146,7 +142,8 @@ connection.onInitialize((params: InitializeParams) => {
             // Включим поддержку подсказок при наведении
             hoverProvider: true,
             // Включим поддержку перехода к определению (F12)
-            definitionProvider: true
+            definitionProvider: true,
+            documentSymbolProvider: true
         }
     };
 });
@@ -370,6 +367,7 @@ connection.onHover((tdpp: TextDocumentPositionParams): Hover => {
     return hover != undefined? hover: null;
 });
 
+
 connection.onDefinition((tdpp: TextDocumentPositionParams) => {
     let obj     : IFAStruct     = FindObject(tdpp);
     let result  : Definition   = undefined;
@@ -387,6 +385,14 @@ connection.onDefinition((tdpp: TextDocumentPositionParams) => {
         }
     }
     return (result !== undefined)? result: null;
+});
+
+connection.onDocumentSymbol(({ textDocument }, token) => {
+  const document = getCurDoc(textDocument.uri);
+  const tree = getCurObj(textDocument.uri);
+
+  const ret = getSymbols(document, tree).filter(n => n);
+  return ret;
 });
 
 documents.listen(connection);
