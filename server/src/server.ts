@@ -46,15 +46,8 @@ function getCurDoc(uri:string):TextDocument {
     return curDocArr.pop();
 }
 
-function getCurObj(uri:string):CBase {
-    let obj:CBase = undefined;
-    for (const iterator of Imports) {
-        if (iterator.uri == uri) {
-            obj = iterator.object;
-            break;
-        }
-    }
-    return obj;
+function getCurObj(uri: string): CBase {
+  return Imports.find(m => m.uri === uri)?.object;
 }
 
 function FindObject(tdpp: TextDocumentPositionParams): IFAStruct {
@@ -215,20 +208,16 @@ documents.onDidChangeContent(change => {
 });
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-    globalSettings = await getDocumentSettings(textDocument.uri);
-    let text = textDocument.getText();
-    
-    let isPresent:boolean = false;
-    for (let iterator of Imports) {
-        if (iterator.uri == textDocument.uri) {
-            iterator.object = new CBase(text, 0);
-            isPresent = true;
-            break;
-        }
-    }
-    if (!isPresent) {
-        Imports.push({uri: textDocument.uri, object: new CBase(text, 0)});
-    }
+  globalSettings = await getDocumentSettings(textDocument.uri);
+  let text = textDocument.getText();
+
+  const module = Imports.find(m => m.uri === textDocument.uri);
+  if (module) {
+    module.object = new CBase(text, 0);
+  } else {
+    Imports.push({ uri: textDocument.uri, object: new CBase(text, 0) });
+  }
+
 
     let currentEditor = connection.sendRequest("getActiveTextEditor");
     currentEditor.then((value:string)=>{
@@ -387,11 +376,26 @@ connection.onDefinition((tdpp: TextDocumentPositionParams) => {
     return (result !== undefined)? result: null;
 });
 
-connection.onDocumentSymbol(({ textDocument }, token) => {
-  const document = getCurDoc(textDocument.uri);
-  const tree = getCurObj(textDocument.uri);
+function refreshModule(textDocument: TextDocument) {
+  const text = textDocument.getText();
+  const { uri } = textDocument;
+  const object = new CBase(text, 0);
 
+  const module = Imports.find(m => m.uri === uri);
+  if (module) {
+    module.object = object;
+  } else {
+    Imports.push({ uri, object });
+  }
+}
+
+connection.onDocumentSymbol(async ({ textDocument }, token) => {
+  const document = getCurDoc(textDocument.uri);
+  refreshModule(document);
+
+  const tree = getCurObj(textDocument.uri);
   const ret = getSymbols(document, tree).filter(n => n);
+
   return ret;
 });
 

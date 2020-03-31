@@ -12,6 +12,18 @@ function getSymbolName(node: CBase) {
 
   return `${node.Name}${typeDelim}${nodeType}`;
 }
+const scopeKinds: number[] = [
+  CompletionItemKind.Class,
+  CompletionItemKind.Method,
+  CompletionItemKind.Function,
+  CompletionItemKind.Module,
+  CompletionItemKind.Unit,
+  CompletionItemKind.Struct
+];
+
+function isScope(k: CompletionItemKind) {
+  return scopeKinds.includes(k);
+}
 
 export function getSymbols(
   document: TextDocument,
@@ -20,28 +32,38 @@ export function getSymbols(
 ): (SymbolInformation | undefined)[] {
   let info: SymbolInformation | undefined;
 
-  try {
-    info = {
-      kind: fromCompletionItemKind(node.ObjKind),
-      location: {
-        range: convertIRange(document, node.Range),
-        uri: document.uri
-      },
-      name: getSymbolName(node),
-      containerName: parent?.Name
-    };
-  } catch (e) {
-    // do not show not supported node kind
-  }
-  console.log(JSON.stringify(info));
-
-  const innerSymbols = node.getChilds().reduce((symbols, child) => {
-    if (child instanceof CBase) {
-      const syms = getSymbols(document, child);
-      symbols.push(...syms);
+  /**
+   * Отображаем все символы на глобальном уровне
+   * макросы вложенные в макросы
+   * методы и свойства внутри классов
+   */
+  if (
+    node.isObject() || // функция или класс
+    parent?.ObjKind === CompletionItemKind.Class ||
+    parent?.ObjKind === CompletionItemKind.Unit // var в классе или в глобальном scope
+  ) {
+    try {
+      info = {
+        kind: fromCompletionItemKind(node.ObjKind),
+        location: {
+          range: convertIRange(document, node.Range),
+          uri: document.uri
+        },
+        name: getSymbolName(node),
+        containerName: parent?.Name
+      };
+    } catch (e) {
+      // do not show not supported node kind
     }
-    return symbols;
-  }, []);
+  }
+
+  const innerSymbols = isScope(node.ObjKind)
+    ? node.getChilds().reduce((symbols, child) => {
+        const syms = getSymbols(document, child, node);
+        symbols.push(...syms);
+        return symbols;
+      }, [])
+    : [];
 
   return [info, ...innerSymbols];
 }
