@@ -498,10 +498,10 @@ export class CBase extends CAbstractBase {
     }
     protected     CreateMacro(isPrivate: boolean)   :void           {
         let isMethod = (this.ObjKind == CompletionItemKind.Class);
-        let range: IRange = {start: this.Pos + this.range.start, end: 0};
+        let range: IRange = {start: this.offset + this.Pos + this.range.start, end: 0};
         let name: string = this.NextToken().str;
         let body: string = this.getObjectBody();
-        range.end = this.Pos + this.range.start;
+        range.end = this.offset + this.Pos + this.range.start;
         let macro: CMacro = new CMacro(body, name, isPrivate, range, isMethod);
         this.addChild(macro);
     }
@@ -620,7 +620,7 @@ class CClass extends CBase {
     private parentName:string;
 
     constructor(src:string, name:string, parentName:string, privateFlag:boolean, range:IRange){
-        super(src, range.start, CompletionItemKind.Class);
+        super(src, range.start + name.length + 1, CompletionItemKind.Class);
         this.name          = name;
         this.parentName    = parentName;
         this.private_      = privateFlag;

@@ -12,18 +12,14 @@ import {
     Definition,
     Position,
     Diagnostic,
-    DiagnosticSeverity,
+    DiagnosticSeverity
 } from 'vscode-languageserver';
-
-
-import
-{
-    CBase,
-} from './common';
 
 import { IFAStruct, IRslSettings, IToken} from  './interfaces';
 import { getDefaults, getCIInfoForArray } from './defaults';
 
+import { CBase } from './common';
+import { getSymbols } from './docsymbols';
 
 let connection = createConnection(ProposedFeatures.all);
 let documents                   : TextDocuments = new TextDocuments();
@@ -51,15 +47,8 @@ function getCurDoc(uri:string):TextDocument {
     return curDocArr.pop();
 }
 
-function getCurObj(uri:string):CBase {
-    let obj:CBase = undefined;
-    for (const iterator of Imports) {
-        if (iterator.uri == uri) {
-            obj = iterator.object;
-            break;
-        }
-    }
-    return obj;
+function getCurObj(uri: string): CBase {
+  return Imports.find(m => m.uri === uri)?.object;
 }
 
 function FindObject(tdpp: TextDocumentPositionParams): IFAStruct {
@@ -147,7 +136,8 @@ connection.onInitialize((params: InitializeParams) => {
             // Включим поддержку подсказок при наведении
             hoverProvider: true,
             // Включим поддержку перехода к определению (F12)
-            definitionProvider: true
+            definitionProvider: true,
+            documentSymbolProvider: true
         }
     };
 });
@@ -214,20 +204,16 @@ documents.onDidChangeContent(change => {
 });
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-    globalSettings = await getDocumentSettings(textDocument.uri);
-    let text = textDocument.getText();
-    
-    let isPresent:boolean = false;
-    for (let iterator of Imports) {
-        if (iterator.uri == textDocument.uri) {
-            iterator.object = new CBase(text, 0);
-            isPresent = true;
-            break;
-        }
-    }
-    if (!isPresent) {
-        Imports.push({uri: textDocument.uri, object: new CBase(text, 0)});
-    }
+  globalSettings = await getDocumentSettings(textDocument.uri);
+  let text = textDocument.getText();
+
+  const module = Imports.find(m => m.uri === textDocument.uri);
+  if (module) {
+    module.object = new CBase(text, 0);
+  } else {
+    Imports.push({ uri: textDocument.uri, object: new CBase(text, 0) });
+  }
+
 
     connection.sendRequest("updateStatusBar", Imports.length); //обновим статус строку
 
@@ -368,6 +354,7 @@ connection.onHover((tdpp: TextDocumentPositionParams): Hover => {
     return hover != undefined? hover: null;
 });
 
+
 connection.onDefinition((tdpp: TextDocumentPositionParams) => {
     let obj     : IFAStruct     = FindObject(tdpp);
     let result  : Definition   = undefined;
@@ -385,6 +372,29 @@ connection.onDefinition((tdpp: TextDocumentPositionParams) => {
         }
     }
     return (result !== undefined)? result: null;
+});
+
+function refreshModule(textDocument: TextDocument) {
+  const text = textDocument.getText();
+  const { uri } = textDocument;
+  const object = new CBase(text, 0);
+
+  const module = Imports.find(m => m.uri === uri);
+  if (module) {
+    module.object = object;
+  } else {
+    Imports.push({ uri, object });
+  }
+}
+
+connection.onDocumentSymbol(async ({ textDocument }, token) => {
+  const document = getCurDoc(textDocument.uri);
+  refreshModule(document);
+
+  const tree = getCurObj(textDocument.uri);
+  const ret = getSymbols(document, tree).filter(n => n);
+
+  return ret;
 });
 
 documents.listen(connection);
