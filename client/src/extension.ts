@@ -35,6 +35,7 @@ class FileItem implements QuickPickItem {
 
 async function quickOpen(uri:string) {
     if (uri) {
+        workspace.openTextDocument(uri);
         for (const curDoc of workspace.textDocuments)
         {
             if (curDoc.uri.toString() == uri)

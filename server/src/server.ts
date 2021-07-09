@@ -40,6 +40,7 @@ export function GetFileRequest(nameInter:string) {
 export function getTree():Array<IFAStruct> {return Imports}
 
 function getCurDoc(uri:string):TextDocument {
+    GetFileRequest(uri);
     let curDocArr = documents.all().filter((value)=>{
         return value.uri == uri;
     });
