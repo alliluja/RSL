@@ -15,3 +15,5 @@
 * [Some snippets](https://github.com/alliluja/RSL/wiki/Snippets).
 * IntelliSense.
 * Code coloring.
+
+## версию 1.0.13 не ставьте, откатитесь до 1.0.12, что-то пошло не так (((
