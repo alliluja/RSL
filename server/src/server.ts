@@ -32,9 +32,13 @@ let globalSettings              : IRslSettings  = defaultSettings;
 let documentSettings            : Map<string, Thenable<IRslSettings>> = new Map();
 let Imports                     : Array<IFAStruct>;
 
-export function GetFileRequest(nameInter:string) {
+export function GetFileByNameRequest(nameInter:string) {
     if (workFolderOpened && globalSettings.import == "ДА")
-        connection.sendRequest("getFile", nameInter);
+        connection.sendRequest("getFilebyName", nameInter);
+}
+
+export function GetFileRequest(filePath:string) {
+        connection.sendRequest("getFile", filePath);
 }
 
 export function getTree():Array<IFAStruct> {return Imports}
