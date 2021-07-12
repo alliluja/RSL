@@ -40,7 +40,10 @@ async function quickOpen(uri:string) {
         workspace.openTextDocument(uri);
         for (const curDoc of workspace.textDocuments)
         {
-            if (curDoc.uri.toString() == uri)
+            var findedUri = curDoc.uri.toString();
+            findedUri = findedUri.replace("file:///", "");
+            findedUri = findedUri.replace("%3A", ":");
+            if (findedUri == uri)
             {
                 await window.showTextDocument(curDoc);
                 break;
