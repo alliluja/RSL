@@ -12,7 +12,7 @@ import {
 
 import { DEFAULT_WHITESPACES, STOP_CHARS, varType, kwdNum, SkipComment, intersNum, OLC, MLC_O, MLC_C, DIGITS } from './enums';
 import { ArrayClass, getDefaults, getCIInfoForArray } from './defaults'
-import { getTree, GetFileRequest } from './server';
+import { getTree, GetFileByNameRequest } from './server';
 import { IFAStruct, If_s, IArray, IRange, CAbstractBase, IToken } from './interfaces';
 
 class CArray implements IArray{
@@ -529,7 +529,7 @@ export class CBase extends CAbstractBase {
         names.forEach(nameInter => {
             //запросим открытие такого файла
             if (!nameInter.endsWith(".mac")) nameInter = nameInter + ".mac";
-                GetFileRequest(nameInter);
+                GetFileByNameRequest(nameInter);
         });
     }
     protected parse():void 	{

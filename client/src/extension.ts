@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { workspace, ExtensionContext, window, DecorationOptions,
          Range, commands, StatusBarItem, StatusBarAlignment,
-         QuickPickItem
+         QuickPickItem, Uri
         } from 'vscode';
 
 import {
@@ -35,6 +35,8 @@ class FileItem implements QuickPickItem {
 
 async function quickOpen(uri:string) {
     if (uri) {
+        uri = uri.replace("file:///", "");
+        uri = uri.replace("%3A", ":");
         workspace.openTextDocument(uri);
         for (const curDoc of workspace.textDocuments)
         {
@@ -166,8 +168,11 @@ export function activate(context: ExtensionContext) {
     // Start the client. This will also launch the server
     client.start();
     client.onReady().then(() => {
-        client.onRequest("getFile", (nameInter : string) => {
-            getFile(nameInter);
+        client.onRequest("getFilebyName", (name : string) => {
+            getFilebyName(name);
+        } );
+        client.onRequest("getFile", (path : string) => {
+            getFile(path);
         } );
         client.onRequest("getActiveTextEditor", () => {
             return activeEditor.document.uri.toString();
@@ -222,7 +227,13 @@ function updateStatusBarItem(n:number)
     }
 }
 
-async function getFile(name):Promise<void>{
+async function getFile(path:string):Promise<void>{
+    path = path.replace("file:///", "");
+    path = path.replace("%3A", ":");
+    workspace.openTextDocument(Uri.file(path));
+}
+
+async function getFilebyName(name:string):Promise<void>{
     await workspace.findFiles(`**/${name}`, null, 1).then((value)=> {
         if (value.length) {
             workspace.openTextDocument(value[0]);
