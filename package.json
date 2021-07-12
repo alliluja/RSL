@@ -4,7 +4,7 @@
    "description": "R-Style Language support",
    "author": "Veniamin Rakov",
    "license": "SEE LICENSE IN 'LICENSE' file",
-   "version": "1.0.13",
+   "version": "1.0.14",
    "icon": "icon.png",
    "bugs": {
       "url": "https://github.com/alliluja/RSL/issues",
