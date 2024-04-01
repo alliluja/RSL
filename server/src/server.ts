@@ -7,12 +7,14 @@ import {
     DidChangeConfigurationNotification,
     CompletionItem,
     TextDocumentPositionParams,
+    TextDocumentIdentifier,
     Hover,
     Location,
     Definition,
     Position,
     Diagnostic,
-    DiagnosticSeverity
+    DiagnosticSeverity,
+    TextEdit
 } from 'vscode-languageserver';
 
 import { IFAStruct, IRslSettings, IToken} from  './interfaces';
@@ -20,6 +22,7 @@ import { getDefaults, getCIInfoForArray } from './defaults';
 
 import { CBase } from './common';
 import { getSymbols } from './docsymbols';
+import { start } from 'repl';
 
 let connection = createConnection(ProposedFeatures.all);
 let documents                   : TextDocuments = new TextDocuments();
@@ -141,7 +144,9 @@ connection.onInitialize((params: InitializeParams) => {
             hoverProvider: true,
             // Включим поддержку перехода к определению (F12)
             definitionProvider: true,
-            documentSymbolProvider: true
+            documentSymbolProvider: true,
+            // Объявления поддержки функции форматирования
+            documentFormattingProvider: true
         }
     };
 });
@@ -400,6 +405,98 @@ connection.onDocumentSymbol(async ({ textDocument }, token) => {
 
   return ret;
 });
+
+connection.onDocumentFormatting((formatParams) => {
+    let document = documents.get(formatParams.textDocument.uri);
+    let text = document.getText();
+
+    // Реаоизация логики форматирования
+    let formattedText = formattingFunction(text, formatParams.options);
+
+    // Возврящение результата в виде изменений текста
+    return [
+        TextEdit.replace(fullDocumentRange(document), formattedText)
+    ]
+});
+
+function formattingFunction(text, options){
+    //Логика форматирования
+    
+    return formatCode(text, options.tabSize);
+};
+
+
+function formatCode(text: string, tabSize: number = 4): string {
+    const lines = text.split('\n');
+    let formattedText = '';
+    let indentLevel = 0;
+
+    lines.forEach((line) => {
+        const trimmedLine = line.trim();
+
+        if((trimmedLine.toUpperCase().includes('MACRO') 
+        || trimmedLine.toUpperCase().includes('CLASS') 
+        || trimmedLine.toUpperCase().includes('IF')
+        || trimmedLine.toUpperCase().includes('FOR')
+        || trimmedLine.toUpperCase().includes('WHILE')) && trimmedLine.toUpperCase().includes('END;') ) {
+            const indent = ' '.repeat(tabSize * indentLevel);
+            formattedText += `${indent}${trimmedLine}\n`;
+            return;
+        }
+
+        if(trimmedLine.toUpperCase().includes('ELIF') || trimmedLine.toUpperCase().includes('ELSE')  ) {
+            const localIndantLevel = Math.max(indentLevel - 1, 0);
+            const indent = ' '.repeat(tabSize * localIndantLevel);
+            formattedText += `${indent}${trimmedLine}\n`;
+            return;
+        }
+
+        // Check for start of macro or nested code block
+        if (trimmedLine.toUpperCase().includes('MACRO') 
+        || trimmedLine.toUpperCase().includes('CLASS') 
+        || trimmedLine.toUpperCase().includes('IF')
+        || trimmedLine.toUpperCase().includes('FOR')
+        || trimmedLine.toUpperCase().includes('WHILE')) {
+            // Apply current indentation and then increase for the next line
+            const indent = ' '.repeat(tabSize * indentLevel);
+            formattedText += `${indent}${trimmedLine}\n`;
+            indentLevel++;
+            return; // Continue to the next iteration
+        }
+
+        // Check for end of a block
+        if (trimmedLine.toUpperCase().includes('END;')) {
+            // Decrease indentation and then apply
+            indentLevel = Math.max(indentLevel - 1, 0);
+            const indent = ' '.repeat(tabSize * indentLevel);
+            formattedText += `${indent}${trimmedLine}\n`;
+            return; // Continue to the next iteration
+        }
+
+        // Handle nested code lines marked with '/\t/g'
+        const nestedIndentCount = (trimmedLine.match(/\/\\t\/g/g) || []).length;
+        indentLevel += nestedIndentCount;
+        // Remove '/\\t/g' for formatting
+        let cleanedLine = line.replace(/\/\\t\/g/g, '').trim();
+
+        // Apply combined indentation
+        const indent = ' '.repeat(tabSize * indentLevel);
+        formattedText += `${indent}${cleanedLine}\n`;
+
+        // Reset indent level after processing nested code line
+        indentLevel -= nestedIndentCount;
+    });
+
+    return formattedText.trim(); // Trim the final string to remove any trailing newlines
+}
+
+// Впомогательная функция для получения диапозона всего документа
+function fullDocumentRange(document){
+    return{
+        start: { line: 0, character: 0 },
+        end: { line: document.lineCount, character: 0 }
+    }
+};
 
 documents.listen(connection);
 
