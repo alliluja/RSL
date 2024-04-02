@@ -410,10 +410,10 @@ connection.onDocumentFormatting((formatParams) => {
     let document = documents.get(formatParams.textDocument.uri);
     let text = document.getText();
 
-    // Реаоизация логики форматирования
+    // Реализация логики форматирования
     let formattedText = formattingFunction(text, formatParams.options);
 
-    // Возврящение результата в виде изменений текста
+    // Возвращение результата в виде изменений текста
     return [
         TextEdit.replace(fullDocumentRange(document), formattedText)
     ]
@@ -421,11 +421,10 @@ connection.onDocumentFormatting((formatParams) => {
 
 function formattingFunction(text, options){
     //Логика форматирования
-    
     return formatCode(text, options.tabSize);
 };
 
-// Впомогательная функция для получения диапозона всего документа
+// Вспомогательная функция для получения диапазона всего документа
 function fullDocumentRange(document){
     return{
         start: { line: 0, character: 0 },

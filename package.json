@@ -4,7 +4,7 @@
    "description": "R-Style Language support",
    "author": "Veniamin Rakov",
    "license": "SEE LICENSE IN 'LICENSE' file",
-   "version": "1.0.15",
+   "version": "1.0.16",
    "icon": "icon.png",
    "bugs": {
       "url": "https://github.com/alliluja/RSL/issues",
@@ -105,8 +105,8 @@
             "title": "Вставить запрос из буфера"
          },
          {
-            "command": "extension.copyQueryFromClipboard",
-            "title": "Копировать запрос из буфера"
+            "command": "extension.copyQueryToClipboard",
+            "title": "Копировать запрос в буфер"
          }
       ],
       "menus": {
@@ -118,7 +118,7 @@
             },
             {
                "when": "editorTextFocus",
-               "command": "extension.copyQueryFromClipboard",
+               "command": "extension.copyQueryToClipboard",
                "group": "9_cutcopypaste"
             }
          ]
@@ -135,7 +135,7 @@
                   "НЕТ"
                ],
                "default": "ДА",
-               "description": "Подгружать имортируемые макросы."
+               "description": "Подгружать импортируемые макросы."
             }
          }
       }

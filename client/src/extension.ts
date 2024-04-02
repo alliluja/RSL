@@ -29,7 +29,7 @@ class FileItem implements QuickPickItem {
         this.label = '$(file) ' + path.basename(MacUri);
         // this.detail = ""; //вместо дескрипшн, выводится под лейблом
         this.description = this.isThatDoc
-            ? 'Текщий файл'
+            ? 'Текущий файл'
             : path.dirname(path.relative(workspace.workspaceFolders[0].uri.toString(), MacUri));
     }
 }
@@ -237,7 +237,7 @@ export function activate(context: ExtensionContext) {
         }
     });
 
-    commands.registerCommand('extension.copyQueryFromClipboard', async () => {
+    commands.registerCommand('extension.copyQueryToClipboard', async () => {
         const editor = window.activeTextEditor;
         if (editor) {
             const text = editor.document.getText(editor.selection);
