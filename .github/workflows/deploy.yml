@@ -19,7 +19,7 @@ jobs:
         npm run build --if-present
            
     - name: Setup VSCE
-      run : npm install -g vsce
+      run : npm install --global vsce
       
     - name: Commit changes locally
       run: |
