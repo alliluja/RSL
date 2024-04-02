@@ -5,7 +5,12 @@ on:
   pull_request:
     branches:
       - master
-
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Test manual action"
+        default: "test"
+        
 jobs:
   build:
 
