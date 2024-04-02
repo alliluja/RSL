@@ -1,8 +1,9 @@
 import * as path from 'path';
-import { workspace, ExtensionContext, window, DecorationOptions,
-         Range, commands, StatusBarItem, StatusBarAlignment,
-         QuickPickItem, Uri
-        } from 'vscode';
+import {
+    workspace, ExtensionContext, window, DecorationOptions,
+    Range, commands, StatusBarItem, StatusBarAlignment,
+    QuickPickItem, Uri, env
+} from 'vscode';
 
 import {
     LanguageClient,
@@ -18,33 +19,31 @@ let myStatusBarItem: StatusBarItem;
 
 class FileItem implements QuickPickItem {
 
-    label           : string;
-    description     : string;
+    label: string;
+    description: string;
     // detail:string;
-    public isThatDoc:boolean;
-    
+    public isThatDoc: boolean;
+
     constructor(public MacUri: string) {
-        this.isThatDoc = activeEditor.document.uri.toString()== MacUri;
-        this.label = '$(file) '+ path.basename(MacUri);
+        this.isThatDoc = activeEditor.document.uri.toString() == MacUri;
+        this.label = '$(file) ' + path.basename(MacUri);
         // this.detail = ""; //вместо дескрипшн, выводится под лейблом
         this.description = this.isThatDoc
-        ? 'Текщий файл'
-        : path.dirname(path.relative(workspace.workspaceFolders[0].uri.toString(), MacUri));
+            ? 'Текщий файл'
+            : path.dirname(path.relative(workspace.workspaceFolders[0].uri.toString(), MacUri));
     }
 }
 
-async function quickOpen(uri:string) {
+async function quickOpen(uri: string) {
     if (uri) {
         uri = uri.replace("file:///", "");
         uri = uri.replace("%3A", ":");
         workspace.openTextDocument(uri);
-        for (const curDoc of workspace.textDocuments)
-        {
+        for (const curDoc of workspace.textDocuments) {
             var findedUri = curDoc.uri.toString();
             findedUri = findedUri.replace("file:///", "");
             findedUri = findedUri.replace("%3A", ":");
-            if (findedUri == uri)
-            {
+            if (findedUri == uri) {
                 await window.showTextDocument(curDoc);
                 break;
             }
@@ -60,18 +59,17 @@ async function showQuickPick() {
     const input = window.createQuickPick<FileItem>();
     input.placeholder = 'Начните вводить имя';
 
-    macros.then((value:string[])=>{
-        let qpArr:FileItem[] = [];
+    macros.then((value: string[]) => {
+        let qpArr: FileItem[] = [];
 
-        value.forEach(element=>{
+        value.forEach(element => {
             qpArr.push(new FileItem(element));
         });
         input.items = qpArr;
         input.show();
 
-        input.onDidAccept(()=>{
-            if(!input.selectedItems[0].isThatDoc)
-            {
+        input.onDidAccept(() => {
+            if (!input.selectedItems[0].isThatDoc) {
                 quickOpen(input.selectedItems[0].MacUri);
             }
         });
@@ -84,10 +82,8 @@ const notUsedVar = window.createTextEditorDecorationType({
     fontStyle: 'italic'
 });
 
-function updateDecorations()
-{
-    if (!activeEditor)
-    {
+function updateDecorations() {
+    if (!activeEditor) {
         return;
     }
     const regEx = /\b(macro|var|const|array|record)\b\s*(\w+)/gi;
@@ -96,24 +92,20 @@ function updateDecorations()
     let match;
     let counterMatches: number = 0;
 
-    while (match = regEx.exec(text))
-    {
+    while (match = regEx.exec(text)) {
         const regEx1 = new RegExp(`\\b${match[2]}\\b`, "gi");
         const start = activeEditor.document.positionAt(match.index + match[0].length);
-        const end   = activeEditor.document.positionAt(text.length);
-        const  range = new Range(start, end);
-        while (regEx1.exec(activeEditor.document.getText(range)))
-        { 
+        const end = activeEditor.document.positionAt(text.length);
+        const range = new Range(start, end);
+        while (regEx1.exec(activeEditor.document.getText(range))) {
             ++counterMatches;//посчитаем сколько раз встречается
-            if (counterMatches > 1)
-                { break; }
+            if (counterMatches > 1) { break; }
         }
-        if (counterMatches < 1)
-        {
-            const offset      = match[0].length - match[2].length;
-            const startPos    = activeEditor.document.positionAt(match.index + offset);
-            const endPos      = activeEditor.document.positionAt(match.index + offset + match[2].length);
-            const decoration  =
+        if (counterMatches < 1) {
+            const offset = match[0].length - match[2].length;
+            const startPos = activeEditor.document.positionAt(match.index + offset);
+            const endPos = activeEditor.document.positionAt(match.index + offset + match[2].length);
+            const decoration =
             {
                 range: new Range(startPos, endPos),
                 hoverMessage: 'Объявление **' + match[2] + '**, не было использовано в данном файле'
@@ -129,7 +121,7 @@ function updateDecorations()
 
 
 export function activate(context: ExtensionContext) {
-    
+
     // registerCommands();
     // The server is implemented in node
     let serverModule = context.asAbsolutePath(
@@ -171,28 +163,28 @@ export function activate(context: ExtensionContext) {
     // Start the client. This will also launch the server
     client.start();
     client.onReady().then(() => {
-        client.onRequest("getFilebyName", (name : string) => {
+        client.onRequest("getFilebyName", (name: string) => {
             getFilebyName(name);
-        } );
-        client.onRequest("getFile", (path : string) => {
+        });
+        client.onRequest("getFile", (path: string) => {
             getFile(path);
-        } );
+        });
         client.onRequest("getActiveTextEditor", () => {
             return activeEditor.document.uri.toString();
-        } );
+        });
         client.onRequest("updateStatusBar", (value) => {
             updateStatusBarItem(value);
-        } );
-        client.onNotification("noRootFolder", ()=> window.showErrorMessage("Импорт макросов недоступен. Для полноценной работы необходимо открыть папку или рабочую область"));
+        });
+        client.onNotification("noRootFolder", () => window.showErrorMessage("Импорт макросов недоступен. Для полноценной работы необходимо открыть папку или рабочую область"));
     });
-    
+
     if (activeEditor) {
         triggerUpdateDecorations();
     }
 
     workspace.onDidChangeTextDocument(event => {
         if (activeEditor && event.document === activeEditor.document) {
-                triggerUpdateDecorations();
+            triggerUpdateDecorations();
         }
     }, null, context.subscriptions);
 
@@ -214,13 +206,63 @@ export function activate(context: ExtensionContext) {
     myStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 500);
     myStatusBarItem.command = myCommandId;
     context.subscriptions.push(myStatusBarItem);
-    
+
     updateStatusBarItem(0);
+
+    commands.registerCommand('extension.insertQueryFromClipboard', async () => {
+        const clipboardText = await env.clipboard.readText();
+        const editor = window.activeTextEditor;
+        if (editor) {
+            editor.edit(editBuilder => {
+
+                var str_indent = "";
+                var num_indent = 2;
+                var out = "";
+
+                var arr = clipboardText.split("\r\n");
+
+                for (; num_indent > 0; num_indent--, str_indent += " ");
+
+                out = str_indent + "cmd = RSDCommand (String (" + "\r\n";
+
+                for (var i = 0; i < arr.length; i++) {
+                    if (i > 0) out += " \",\r\n";
+                    out += str_indent + "\" " + arr[i];
+                }
+                out += " \"\r\n" + str_indent + "));";
+
+                editBuilder.insert(editor.selection.start, out);
+                window.showInformationMessage('Запрос из буфера вставлен');
+            });
+        }
+    });
+
+    commands.registerCommand('extension.copyQueryFromClipboard', async () => {
+        const editor = window.activeTextEditor;
+        if (editor) {
+            const text = editor.document.getText(editor.selection);
+
+            var str = text;
+            var out = "";
+            var arr;
+
+            arr = str.split("\r\n");
+
+            for (var i = 0; i < arr.length; i++) {
+                str = arr[i];
+                str = str.replace('",', '');
+                str = str.replace(new RegExp('"', 'g'), '');
+                out += str + "\r\n";
+            }
+
+            await env.clipboard.writeText(out);
+            window.showInformationMessage('Запрос скопирован в буфер обмена');
+        }
+    });
 
 }
 
-function updateStatusBarItem(n:number)
-{
+function updateStatusBarItem(n: number) {
     if (n > 0) {
         myStatusBarItem.text = `$(file) ${n} макросов`; //https://code.visualstudio.com/api/references/icons-in-labels
         myStatusBarItem.tooltip = "Показать список";
@@ -230,14 +272,14 @@ function updateStatusBarItem(n:number)
     }
 }
 
-async function getFile(path:string):Promise<void>{
+async function getFile(path: string): Promise<void> {
     path = path.replace("file:///", "");
     path = path.replace("%3A", ":");
     workspace.openTextDocument(Uri.file(path));
 }
 
-async function getFilebyName(name:string):Promise<void>{
-    await workspace.findFiles(`**/${name}`, null, 1).then((value)=> {
+async function getFilebyName(name: string): Promise<void> {
+    await workspace.findFiles(`**/${name}`, null, 1).then((value) => {
         if (value.length) {
             workspace.openTextDocument(value[0]);
         }

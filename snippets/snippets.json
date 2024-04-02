@@ -20,20 +20,29 @@
     "macro": {
       "prefix": "macro",
       "body": [ 
-         "${1:private} macro ${2:name} (${3:extVar})${4:return}",
-         "\tvar result = null;",
+         "${1:PRIVATE} MACRO ${2:name} (${3:extVar})${4:Return}",
+         "\tVar result = null;",
          "\t$0",
-         "\treturn result;",
-         "end;"
+         "\tReturn result;",
+         "End;"
       ],
       "description": "private macro"
+   },
+   "sql": {
+      "prefix": "sql",
+      "body": [
+         "Var cmd = RSDCommand (String (" ,
+         "${1:qiery}" ,
+         "));"
+      ],
+      "description": "sql command"
    },
     "while": {
       "prefix": "while",
       "body": [ 
-         "while (${1:expr})",
+         "While (${1:expr})",
          "\t$0",
-         "end;"
+         "End;"
       ],
       "description": "while"
    },
@@ -46,54 +55,54 @@
    "for_arr": {
       "prefix": "fora",
       "body": [
-         "for (var ${1:item}, ${2:itemlist})",
+         "For (Var ${1:item}, ${2:itemlist})",
          "\t$0",
-         "end;"
+         "End;"
       ],
-      "description": "For (var item, itemlist)"
+      "description": "For (Var item, itemlist)"
    },
     
    "for_iter": {
       "prefix": "for",
       "body": [
-         "for (var i, ${1:begin}, ${2:end}, ${3:loop})",
+         "For (Var i, ${1:begin}, ${2:end}, ${3:loop})",
          "\t$0",
-         "end;"
+         "End;"
       ],
-      "description": "For (var i, 0, 10, 1)"
+      "description": "For (Var i, 0, 10, 1)"
    },
 
    "if": {
       "prefix": "if",
       "body": [
-         "if (${1:cond})",
+         "If (${1:cond})",
          "\t$0",
-         "end;"
+         "End;"
       ],
-      "description": "if() end;"
+      "description": "if() End;"
    },
 
    "elif": {
       "prefix": "ife",
       "body": [
-         "if (${1:cond})",
-         "elif (${2:elseCond})",
+         "If (${1:cond})",
+         "Elif (${2:elseCond})",
          "\t$0",
-         "end;"
+         "End;"
       ],
-      "description": "if() elif end;"
+      "description": "if() elif End;"
    },
 
    "ifelse": {
       "prefix": "ifelse",
       "body": [
-         "if (${1:cond})",
+         "If (${1:cond})",
          "\t${2://true}",
-         "else",
+         "Else",
          "\t${3://false}",
-         "end;"
+         "End;"
       ],
-      "description": "if() elif end;"
+      "description": "if() elif End;"
    },
 
    "note": {

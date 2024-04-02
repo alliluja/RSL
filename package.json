@@ -99,6 +99,30 @@
             "path": "./snippets/snippets.json"
          }
       ],
+      "commands": [
+         {
+            "command": "extension.insertQueryFromClipboard",
+            "title": "Вставить запрос из буфера"
+         },
+         {
+            "command": "extension.copyQueryFromClipboard",
+            "title": "Копировать запрос из буфера"
+         }
+      ],
+      "menus": {
+         "editor/context": [
+            {
+               "when": "editorTextFocus",
+               "command": "extension.insertQueryFromClipboard",
+               "group": "9_cutcopypaste"
+            },
+            {
+               "when": "editorTextFocus",
+               "command": "extension.copyQueryFromClipboard",
+               "group": "9_cutcopypaste"
+            }
+         ]
+      },
       "configuration": {
          "type": "object",
          "title": "RSL configuration",

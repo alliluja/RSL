@@ -7,12 +7,14 @@ import {
     DidChangeConfigurationNotification,
     CompletionItem,
     TextDocumentPositionParams,
+    TextDocumentIdentifier,
     Hover,
     Location,
     Definition,
     Position,
     Diagnostic,
-    DiagnosticSeverity
+    DiagnosticSeverity,
+    TextEdit
 } from 'vscode-languageserver';
 
 import { IFAStruct, IRslSettings, IToken} from  './interfaces';
@@ -20,6 +22,7 @@ import { getDefaults, getCIInfoForArray } from './defaults';
 
 import { CBase } from './common';
 import { getSymbols } from './docsymbols';
+import { start } from 'repl';
 
 let connection = createConnection(ProposedFeatures.all);
 let documents                   : TextDocuments = new TextDocuments();
@@ -141,7 +144,9 @@ connection.onInitialize((params: InitializeParams) => {
             hoverProvider: true,
             // Включим поддержку перехода к определению (F12)
             definitionProvider: true,
-            documentSymbolProvider: true
+            documentSymbolProvider: true,
+            // Объявления поддержки функции форматирования
+            documentFormattingProvider: true
         }
     };
 });
@@ -400,6 +405,33 @@ connection.onDocumentSymbol(async ({ textDocument }, token) => {
 
   return ret;
 });
+
+connection.onDocumentFormatting((formatParams) => {
+    let document = documents.get(formatParams.textDocument.uri);
+    let text = document.getText();
+
+    // Реаоизация логики форматирования
+    let formattedText = formattingFunction(text, formatParams.options);
+
+    // Возврящение результата в виде изменений текста
+    return [
+        TextEdit.replace(fullDocumentRange(document), formattedText)
+    ]
+});
+
+function formattingFunction(text, options){
+    //Логика форматирования
+    
+    return formatCode(text, options.tabSize);
+};
+
+// Впомогательная функция для получения диапозона всего документа
+function fullDocumentRange(document){
+    return{
+        start: { line: 0, character: 0 },
+        end: { line: document.lineCount, character: 0 }
+    }
+};
 
 documents.listen(connection);
 
