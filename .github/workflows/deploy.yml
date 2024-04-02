@@ -29,4 +29,4 @@ jobs:
         git commit -m "Update files by Deploy Action"
 
     - name: Deploy to Marketplace
-      run : vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
+      run : vsce publish -p ${{ secrets.NEW_MARKETPLACE_TOKEN }}
