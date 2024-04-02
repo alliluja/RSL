@@ -23,6 +23,7 @@ import { getDefaults, getCIInfoForArray } from './defaults';
 import { CBase } from './common';
 import { getSymbols } from './docsymbols';
 import { start } from 'repl';
+import { formatCode } from './format';
 
 let connection = createConnection(ProposedFeatures.all);
 let documents                   : TextDocuments = new TextDocuments();
