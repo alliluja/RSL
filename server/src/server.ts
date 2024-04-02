@@ -95,6 +95,7 @@ function FindObject(tdpp: TextDocumentPositionParams): IFAStruct {
                         }
                     }
                 }
+                
                 else if (objects.length == 1)
                 {
                     CBaseObject = objects.pop();
