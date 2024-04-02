@@ -1,4 +1,4 @@
-function formatCode(text: string, tabSize: number = 4): string {
+export function formatCode(text: string, tabSize: number = 4): string {
     const lines = text.split('\n');
     let formattedText = '';
     let indentLevel = 0;
