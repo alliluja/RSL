@@ -5,7 +5,12 @@ on:
   pull_request:
     branches:
       - master
-
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Test manual action"
+        default: "test"
+        
 jobs:
   build:
 
@@ -19,7 +24,7 @@ jobs:
         npm run build --if-present
            
     - name: Setup VSCE
-      run : npm install --global vsce
+      run : npm install --global @vscode/vsce
       
     - name: Commit changes locally
       run: |
@@ -29,4 +34,6 @@ jobs:
         git commit -m "Update files by Deploy Action"
 
     - name: Deploy to Marketplace
-      run : vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }}
+      env:
+        VSCE_PAT: ${{ secrets.NEW_MARKETPLACE_TOKEN }}
+      run : vsce publish
