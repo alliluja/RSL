@@ -113,12 +113,12 @@
       "menus": {
          "editor/context": [
             {
-               "when": "editorTextFocus",
+               "when": "resourceLangId == rsl",
                "command": "extension.insertQueryFromClipboard",
                "group": "9_cutcopypaste"
             },
             {
-               "when": "editorTextFocus",
+               "when": "resourceLangId == rsl",
                "command": "extension.copyQueryToClipboard",
                "group": "9_cutcopypaste"
             }
