@@ -2,18 +2,13 @@
 name: deploy
 
 on:
-  pull_request:
+  push:
     branches:
-      - master
-  workflow_dispatch:
-    inputs:
-      name:
-        description: "Test manual action"
-        default: "test"
+      - main # Your default release branch
         
 jobs:
-  build:
-
+  publish:
+    name: list on marketplace
     runs-on: ubuntu-latest
 
     steps:
@@ -22,18 +17,10 @@ jobs:
       run: |
         npm install
         npm run build --if-present
-           
-    - name: Setup VSCE
-      run : npm install --global @vscode/vsce
-      
-    - name: Commit changes locally
-      run: |
-        git config user.email "raven03160@gmail.com"
-        git config user.name "Veniamin Rakov"
-        git add package-lock.json package.json
-        git commit -m "Update files by Deploy Action"
 
-    - name: Deploy to Marketplace
+    - name: Deploy Extension
+      uses: lannonbr/vsce-action@3.0.0
+      with:
+        args: "publish -p $VSCE_TOKEN"
       env:
-        VSCE_PAT: ${{ secrets.NEW_MARKETPLACE_TOKEN }}
-      run : vsce publish
+        VSCE_TOKEN: ${{ secrets.NEW_MARKETPLACE_TOKEN }}
