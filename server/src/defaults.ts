@@ -266,6 +266,15 @@ func = new CNodeFunc(
 );
 DefaultsArray.push(func);
 
+func = new CNodeFunc(
+	"StrSubst",
+	"variable",
+	"Функция StrSubst ( sourse, strToFind, strToReplace)",
+	{kind: MarkupKind.Markdown, value: "Процедура ищет в строке source подстроки strToFind и заменяет их строками strToReplace. Возвращаемым значением является результирующая строка."},
+	"StrSubst( ${1:sourse}, ${2:\"\"}, ${3:\"\"} );$0" /*подставляемый текст*/
+);
+DefaultsArray.push(func);
+
 /*ListChapter */
 
 
