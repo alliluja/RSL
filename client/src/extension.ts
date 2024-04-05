@@ -169,8 +169,21 @@ export function activate(context: ExtensionContext) {
         client.onRequest("getFile", (path: string) => {
             getFile(path);
         });
-        client.onRequest("getActiveTextEditor", () => {
-            return activeEditor.document.uri.toString();
+
+        client.onRequest("getActiveTextEditor", async () => {
+            if(activeEditor != null && activeEditor.document != null){
+                try {
+                    return activeEditor.document.uri.toString();
+                } catch {
+                    // Файл не существует
+                    return null;
+                }
+                
+            }
+            else {
+                return null;
+            }
+            
         });
         client.onRequest("updateStatusBar", (value) => {
             updateStatusBarItem(value);
