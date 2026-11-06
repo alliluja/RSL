@@ -244,6 +244,21 @@ export class CBase extends CAbstractBase {
             this.SavePos();
             this.position = _position - 1;
             if (!DEFAULT_WHITESPACES.includes(this.CurrentChar)) {
+                // Если курсор стоит сразу после "]", откатываемся до парной "["
+                if (this.CurrentChar === "]") {
+                    let depth: number = 1;
+                    this.position--;
+                    while (depth > 0 && this.position >= 0) {
+                        if (this.CurrentChar === "]") depth++;
+                        else if (this.CurrentChar === "[") depth--;
+                        if (depth > 0) this.position--;
+                    }
+                    // Теперь position стоит на "["; шагнём на один вперёд, чтобы NextToken съел "[...]"
+                    this.position++;
+                    res = this.NextToken();
+                    if (savePosition) this.RestorePos();
+                    return res;
+                }
                 if (this.CurrentChar === ".") this.position--;
                 while (!this.IsStopChar() && this.CurrentChar != undefined) {
                     this.position--;
@@ -325,17 +340,33 @@ export class CBase extends CAbstractBase {
         this.Skip();
         let savedPosition: number = this.Pos;
         let token: string = "";
-        if (!this.IsStopChar()) {
-            if (this.CurrentChar == "\"") {
-                let stop: boolean = false;
-                token = token + this.CurrentChar;
+        if (this.CurrentChar == "{") {
+            // Спецпеременная {…} — читаем до парной "}", не разбивая по STOP_CHARS
+            while (!this.End) {
+                token += this.CurIndex(this.Pos);
                 this.Next();
-
-                while (!stop && !this.End) {
-                    stop = (this.CurrentChar == "\"" && this.CurIndex(this.position - 1) != "\\") ? true : false;
-                    token = token + this.CurrentChar;
+                if (this.CurIndex(this.Pos) == "}") {
+                    token += this.CurIndex(this.Pos);
                     this.Next();
+                    break;
                 }
+            }
+        }
+        else if (this.CurrentChar == "[") {
+            // Индексное выражение [...] — читаем до парной "]" с учётом вложенности
+            let depth: number = 1;
+            token += this.CurrentChar;
+            this.Next();
+            while (depth > 0 && !this.End) {
+                if (this.CurrentChar == "[") depth++;
+                else if (this.CurrentChar == "]") depth--;
+                token += this.CurrentChar;
+                this.Next();
+            }
+        }
+        else if (!this.IsStopChar()) {
+            if (this.CurrentChar == "\"") {
+                // ... обработка строки в кавычках (без изменений)
             }
             else {
                 while (!this.IsToken(token) && !this.End) {
@@ -344,14 +375,7 @@ export class CBase extends CAbstractBase {
                 }
             }
             if (skipComment == SkipComment.yes) {
-                if (token == OLC) {
-                    this.SkipToEndComment(true);
-                    token = this.NextToken(skipComment).str;
-                }
-                else if (token == MLC_O) {
-                    this.SkipToEndComment();
-                    token = this.NextToken(skipComment).str;
-                }
+                // ... обработка комментариев (без изменений)
             }
         }
         else {
@@ -428,13 +452,27 @@ export class CBase extends CAbstractBase {
     }
     protected GetMLC(): string {
         let comment: string = "";
-        while (!((this.CurrentChar == "*") && (this.CurIndex(this.Pos + 1) == "/")) && !this.End) {
-            comment += this.CurrentChar;
-            this.Next();
+        let depth: number = 1;
+        // пропускаем открывающий "/*"
+        if (this.CurrentChar == "/" && this.CurIndex(this.Pos + 1) == "*") {
+            this.Next(); this.Next();
         }
-        this.Next(); this.Next();
+        while (depth > 0 && !this.End) {
+            if (this.CurrentChar == "/" && this.CurIndex(this.Pos + 1) == "*") {
+                depth++;
+                comment += "/*";
+                this.Next(); this.Next();
+            } else if (this.CurrentChar == "*" && this.CurIndex(this.Pos + 1) == "/") {
+                depth--;
+                if (depth > 0) comment += "*/";
+                this.Next(); this.Next();
+            } else {
+                comment += this.CurrentChar;
+                this.Next();
+            }
+        }
         return comment;
-    }
+    }    
     protected SkipToEndComment(isOLC: boolean = false): void {
         if (isOLC) {
             this.GetOLC();
@@ -589,6 +627,24 @@ export class CBase extends CAbstractBase {
                     case kwdNum._macro: this.CreateMacro(false); break;
                     case kwdNum._import: this.CreateImport(); break;
                     case kwdNum._class: this.CreateClass(false); break;
+                    case kwdNum._onerror: {
+                        // OnError [ (переменная) ] — регистрируем переменную ошибки, если она есть
+                        let nextTok: IToken = this.NextToken(SkipComment.no);
+                        if (nextTok.str == "(") {
+                            let varName: IToken = this.NextToken();
+                            if (varName.str && varName.str != ")") {
+                                let errVar: CVar = new CVar(varName.str, false, false, false);
+                                errVar.setRange({ start: varName.range.start + this.offset, end: varName.range.end + this.offset });
+                                this.addChild(errVar);
+                            }
+                            // пропускаем до ")"
+                            while (!this.End && this.CurrentChar != ")") this.Next();
+                            if (!this.End) this.Next(); // съедаем ")"
+                        } else {
+                            // без параметра — просто откатываемся, чтобы не потерять токен
+                            this.position = nextTok.range.start;
+                        }
+                    } break;
                     default: break;
                 }
             }

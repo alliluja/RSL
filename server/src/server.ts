@@ -356,6 +356,11 @@ connection.onHover((tdpp: TextDocumentPositionParams): Hover => {
 
 
 connection.onDefinition((tdpp: TextDocumentPositionParams) => {
+    // debug Go to Definition
+    //connection.console.log(`onDefinition: ${tdpp.textDocument.uri} @ ${tdpp.position.line}:${tdpp.position.character}`);
+    //let obj: IFAStruct = FindObject(tdpp);
+    //connection.console.log(`FindObject result: ${obj ? obj.object.Name : 'undefined'}`);
+
     let obj: IFAStruct = FindObject(tdpp);
     let result: Definition = undefined;
     if (isNotCommentOrString(tdpp)) {

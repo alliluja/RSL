@@ -54,8 +54,10 @@
                "include": "#function_call"
             },
             {
-               "match": "\\b[\\w]+(?=[\\[])(?=[\\s\\w,\"@:]*)",
-               "name": "variable.language.array.rsl"
+               "match": "\\b([\\w]+)(?=\\[)",
+               "captures": {
+                  "1": { "name": "variable.other.array.rsl" }
+               }
             },
             {
                "include": "#output_string"
@@ -107,17 +109,23 @@
             {
                "begin": "(\\s|^)\\[",
                "beginCaptures": {
-                  "0": {
-                     "name": "string.quoted.single.rsl"
-                  }
+                  "0": { "name": "string.quoted.single.rsl" }
                },
                "end": "\\]",
                "endCaptures": {
-                  "0": {
-                     "name": "string.quoted.single.rsl"
-                  }
+                  "0": { "name": "string.quoted.single.rsl" }
                },
-               "name": "string.quoted.single.rsl"
+               "name": "string.quoted.single.rsl",
+               "patterns": [
+                  {
+                     "match": ":(?:[lrcamzfoesvxtdw])(?![\\w])",
+                     "name": "keyword.other.format-specifier.rsl"
+                  },
+                  {
+                     "match": "#+",
+                     "name": "constant.other.placeholder.rsl"
+                  }
+               ]
             },
             {
                "match": "(\\s|^)\\[(\\s*.*)\\]\\s*(?=;|\\()",
@@ -149,8 +157,11 @@
                      "name": "punctuation.definition.comment.end.rsl"
                   }
                },
-               "name": "comment.block.rsl"
-            },
+               "name": "comment.block.rsl",
+               "patterns": [
+                  { "include": "#comments" }
+               ]
+               },
             {
                "match": "\\*/.*\\n",
                "name": "invalid.illegal.stray-comment-end.rsl"
@@ -269,24 +280,15 @@
       "global_variables": {
          "patterns": [
             {
-               "begin": "\\s*(?=\\{)",
+               "begin": "\\{",
                "beginCaptures": {
-                  "0": {
-                     "name": "storage.type.rsl"
-                  }
+                  "0": { "name": "punctuation.definition.variable.global.begin.rsl" }
                },
-               "end": "(?=\\})",
+               "end": "\\}",
                "endCaptures": {
-                  "0": {
-                     "name": "storage.type.rsl"
-                  }
+                  "0": { "name": "punctuation.definition.variable.global.end.rsl" }
                },
-               "patterns": [
-                  {
-                     "match": "[\\w*]",
-                     "name": "variable.parameter.global.rsl"
-                  }
-               ]
+               "name": "variable.parameter.global.rsl"
             }
          ]
       },
