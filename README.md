@@ -9,17 +9,6 @@ RSL или Object RSL (аббр. от англ. R-Style Language) — объек
 3. Type `ext install rsl` to find the extension
 4. Click the `Install` button, then the `Enable` button
 
-OR
-
-1. Press `Ctrl+Shift+X` to open the Extensions tab
-2. Type `rsl` to find the extension
-3. Click the `Install` button, then the `Enable` button
-
-OR
-
-1. Open a command-line prompt
-2. Run `code --install-extension bezelbobsky.vscode-rsl`
-
  [GitHub Link](https://github.com/alliluja/RSL "Source, wiki, issue")
 
  [MarketPlace Link](https://marketplace.visualstudio.com/items?itemName=VeniaminRakov.rsl "Releases")
@@ -34,3 +23,5 @@ OR
 * Formatting
 * Past query from clipboard
 * Copy query to clipboard
+
+* Всем привет. Я давно не работаю в Р-Стайл. Данное расшиерние наверное лучше форкнуть и дорабатывать. 
